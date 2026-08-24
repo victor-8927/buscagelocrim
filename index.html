@@ -936,34 +936,122 @@ function renderSabias(){
 }
 
 /* ══════════════════════════════════════════════════════════
-   AGENDA — eventos reais de Manaus
+   AGENDA — busca dinâmica do Supabase (atualizada automaticamente pelo Make+IA)
 ══════════════════════════════════════════════════════════ */
-const AGENDA=[
-  {dia:'16',mes:'AGO',nome:'ExpoAgro 2026 — 48ª Edição',local:'Parque Multiuso · BR-174 km 2',desc:'Rodeio, shows (Klessinha, Humberto & Ronaldo, Tarcísio do Acordeon), exposição de animais e 230mil visitantes esperados.',gelo:true,free:true,link:'https://edilenemafra.com'},
-  {dia:'17',mes:'SET',nome:'Festival de Cinema — Olhar do Norte',local:'Teatro Amazonas · Centro',desc:'7ª edição com mostras competitivas Amazônia, Outros Nortes e Olhinho infantojuvenil.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'25',mes:'SET',nome:'Festival Lona Aberta — Circo & Artes',local:'Espaços culturais · Manaus',desc:'3ª edição com grupos do AM, PA, GO, SP, RJ e CE. Intercâmbio de artistas circenses.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'09',mes:'OUT',nome:'Samba Manaus 2026 — Última Edição',local:'Arena da Amazônia · Centro',desc:'25 horas de festa com grandes nomes do samba e pagode nacional.',gelo:false,free:false,link:'https://edilenemafra.com'},
-  {dia:'02',mes:'NOV',nome:'Festival Folclórico de Manaus',local:'Sambódromo · Av. Pedro Teixeira',desc:'Grupos folclóricos do Amazonas em apresentações abertas ao público. GeloCrim presente.',gelo:true,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'23',mes:'NOV',nome:'13º Festival Amazonas de Dança',local:'Teatro Amazonas · Centro',desc:'Maior festival de dança da Amazônia com grupos do Brasil e exterior.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'31',mes:'DEZ',nome:'Réveillon Ponta Negra 2027',local:'Praia de Ponta Negra · Manaus',desc:'Fogos de 12min sobre o Rio Negro, shows musicais até o amanhecer. Entrada gratuita.',gelo:false,free:true,link:'https://manausagil.com/eventos/'},
-  {dia:'25',mes:'JUN',nome:'Festival de Parintins 2027',local:'Bumbódromo · Parintins, AM',desc:'O maior festival folclórico da Amazônia. Boi Garantido × Boi Caprichoso. GeloCrim fornece 10t/dia.',gelo:true,free:false,link:'https://agendaculturaldemanaus.com.br'},
-];
+const MESES_ABREV=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
-function renderAgenda(){
-  document.getElementById('ta').innerHTML=
-    `<a class="alink" href="https://cultura.am.gov.br/agenda/" target="_blank">🗓 Ver agenda cultural completa do Amazonas →</a>`+
-    AGENDA.map(e=>`
-    <div class="ecard" onclick="window.open('${e.link}','_blank')">
-      <div class="etop">
-        <div class="edate"><div class="edia">${e.dia}</div><div class="emes">${e.mes}</div></div>
-        <div class="einfo"><strong>${e.nome}</strong><span>${e.desc}</span></div>
+const CAT_ICO={
+  'Show':'🎤','Festival':'🎪','Cultural':'🎭','Esporte':'⚽',
+  'Cinema':'🎬','Teatro':'🎭','Feira':'🛍','Shopping':'🛒',
+  'Religioso':'⛪','Outro':'📅'
+};
+
+async function renderAgenda(){
+  const wrap=document.getElementById('ta');
+
+  // Loading state
+  wrap.innerHTML=`
+    <a class="alink" href="https://cultura.am.gov.br/agenda/" target="_blank">
+      🗓 Ver agenda cultural completa do Amazonas →
+    </a>
+    <div class="empty">
+      <div class="empty-ico">📅</div>
+      <div>Carregando eventos...</div>
+    </div>`;
+
+  try {
+    // Busca eventos dos próximos 90 dias do Supabase
+    const r = await fetch(
+      `${SB}/rest/v1/rpc/upcoming_events`,
+      {
+        method:'POST',
+        headers:{
+          apikey:SK,
+          Authorization:`Bearer ${SK}`,
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify({days_ahead:90})
+      }
+    );
+
+    if(!r.ok) throw new Error(r.status);
+    const events = await r.json();
+
+    if(!events.length){
+      wrap.innerHTML=`
+        <a class="alink" href="https://cultura.am.gov.br/agenda/" target="_blank">
+          🗓 Ver agenda cultural completa do Amazonas →
+        </a>
+        <div class="empty">
+          <div class="empty-ico">📅</div>
+          <div>Nenhum evento nos próximos 90 dias.</div>
+          <div style="font-size:10px;margin-top:4px;color:var(--txt3)">
+            O sistema atualiza automaticamente todo dia às 8h.
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Renderiza eventos do Supabase
+    const cards = events.map(e => {
+      const d    = new Date(e.date_start+'T12:00:00');
+      const dia  = String(d.getDate()).padStart(2,'0');
+      const mes  = MESES_ABREV[d.getMonth()];
+      const ico  = CAT_ICO[e.category] || '📅';
+      const link = e.link_url || 'https://www.agendaculturaldemanaus.com.br';
+
+      // Datas: se tiver date_end diferente de date_start mostra período
+      let dateLine = `${dia}/${mes}`;
+      if(e.date_end && e.date_end !== e.date_start){
+        const de = new Date(e.date_end+'T12:00:00');
+        dateLine = `${dia}–${String(de.getDate()).padStart(2,'0')}/${mes}`;
+      }
+
+      return `
+      <div class="ecard" onclick="window.open('${link}','_blank')">
+        <div class="etop">
+          <div class="edate">
+            <div class="edia" style="font-size:${dateLine.length>5?'16px':'26px'}">${dateLine}</div>
+            <div class="emes">${mes}</div>
+          </div>
+          <div class="einfo">
+            <strong>${ico} ${e.title}</strong>
+            <span>${e.description||''}</span>
+          </div>
+        </div>
+        <div class="echips">
+          ${e.venue?`<span class="ec ec-l">📍 ${e.venue}</span>`:''}
+          ${e.has_gelocrim?'<span class="ec ec-g">🧊 GeloCrim presente</span>':''}
+          ${e.is_free
+            ?'<span class="ec ec-f">✅ Gratuito</span>'
+            :'<span class="ec ec-p">🎟 Ingresso pago</span>'}
+          <span class="ec" style="background:rgba(255,255,255,.06);border:1px solid var(--brd);color:var(--txt3)">${e.category||'Evento'}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML=`
+      <a class="alink" href="https://cultura.am.gov.br/agenda/" target="_blank">
+        🗓 Ver agenda cultural completa do Amazonas →
+      </a>
+      <div style="font-size:10px;color:var(--txt3);padding:4px 2px 8px;display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span>
+        ${events.length} eventos · Atualizado automaticamente todo dia às 8h
       </div>
-      <div class="echips">
-        <span class="ec ec-l">📍 ${e.local}</span>
-        ${e.gelo?'<span class="ec ec-g">🧊 GeloCrim presente</span>':''}
-        ${e.free?'<span class="ec ec-f">✅ Gratuito</span>':'<span class="ec ec-p">🎟 Ingresso pago</span>'}
-      </div>
-    </div>`).join('');
+      ${cards}`;
+
+  } catch(e) {
+    // Fallback com eventos fixos se o banco falhar
+    wrap.innerHTML=`
+      <a class="alink" href="https://cultura.am.gov.br/agenda/" target="_blank">
+        🗓 Ver agenda cultural completa do Amazonas →
+      </a>
+      <div class="empty">
+        <div class="empty-ico">⚠️</div>
+        <div>Não foi possível carregar os eventos.</div>
+        <div style="font-size:10px;margin-top:4px">Verifique sua conexão.</div>
+      </div>`;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1084,7 +1172,7 @@ runSplash(()=>{
   updateHeaderOffset();
   renderManaus();
   renderSabias();
-  renderAgenda();
+  renderAgenda(); // busca do Supabase automaticamente
   loadWeather();
   loadLeaflet(()=>{/* aguarda localizar */});
 });

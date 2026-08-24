@@ -749,25 +749,76 @@ async function loadNearby(){
   }
 }
 
+// Gera SVG do pin GPS com snowflake GeloCrim
+function makePinSVG(color){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+    <ellipse cx="18" cy="43" rx="7" ry="2.5" fill="rgba(0,0,0,0.35)"/>
+    <path d="M18 2 C9.16 2 2 9.16 2 18 C2 28.5 18 42 18 42 C18 42 34 28.5 34 18 C34 9.16 26.84 2 18 2Z"
+      fill="${color}" stroke="#040E1A" stroke-width="1.5"/>
+    <circle cx="18" cy="17" r="10" fill="rgba(255,255,255,0.12)"/>
+    <line x1="18" y1="9"  x2="18" y2="25" stroke="white" stroke-width="2"   stroke-linecap="round"/>
+    <line x1="10" y1="17" x2="26" y2="17" stroke="white" stroke-width="2"   stroke-linecap="round"/>
+    <line x1="12" y1="11" x2="24" y2="23" stroke="white" stroke-width="2"   stroke-linecap="round"/>
+    <line x1="24" y1="11" x2="12" y2="23" stroke="white" stroke-width="2"   stroke-linecap="round"/>
+    <line x1="18" y1="9"  x2="15" y2="12" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="18" y1="9"  x2="21" y2="12" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="18" y1="25" x2="15" y2="22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="18" y1="25" x2="21" y2="22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="10" y1="17" x2="13" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="10" y1="17" x2="13" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="26" y1="17" x2="23" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="26" y1="17" x2="23" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+}
+
 function refreshPins(list){
   markers.forEach(m=>mapInst.removeLayer(m));markers=[];
   list.filter(p=>p.latitude&&p.longitude).forEach(p=>{
     const s=SEG[p.segment]||SEG['A confirmar'];
     const dist=p.distance_m<1000?p.distance_m+'m':(p.distance_m/1000).toFixed(1)+'km';
-    const ico=L.divIcon({className:'',
-      html:`<div style="width:32px;height:32px;border-radius:50%;background:${s.co};border:3px solid #040E1A;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.5),0 0 14px ${s.co}66;cursor:pointer;">${s.ico}</div>`,
-      iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]});
+
+    const ico=L.divIcon({
+      className:'',
+      html:`<div style="cursor:pointer;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 0 8px ${s.co}88)">
+        ${makePinSVG(s.co)}
+      </div>`,
+      iconSize:[36,44],
+      iconAnchor:[18,44],
+      popupAnchor:[0,-46],
+    });
+
     const m=L.marker([p.latitude,p.longitude],{icon:ico}).addTo(mapInst)
-      .bindPopup(`<div class="lp-name">${s.ico} ${p.trade_name}</div>
+      .bindPopup(`
+        <div class="lp-name">${s.ico} ${p.trade_name}</div>
         <div class="lp-meta">📍 ${p.district||'–'} · ${dist}</div>
-        <button class="lp-btn" onclick="openDetail(${p.id})">Ver detalhes & Rota →</button>`,{maxWidth:220});
+        <button class="lp-btn" onclick="openDetail(${p.id})">Ver detalhes & Rota →</button>`,
+        {maxWidth:220});
     markers.push(m);
   });
 }
 
 function placeUserPin(){
   if(userM)mapInst.removeLayer(userM);
-  userM=L.marker([userLat,userLng],{icon:L.divIcon({className:'',html:'<div class="u-pin"></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(mapInst).bindPopup('<b>📍 Você está aqui</b>');
+
+  const userPinSVG=`<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+    <ellipse cx="14" cy="35" rx="6" ry="2" fill="rgba(0,0,0,0.3)"/>
+    <path d="M14 1 C7.37 1 2 6.37 2 13 C2 22 14 35 14 35 C14 35 26 22 26 13 C26 6.37 20.63 1 14 1Z"
+      fill="#FF6B00" stroke="#040E1A" stroke-width="1.5"/>
+    <circle cx="14" cy="13" r="5" fill="white" opacity="0.9"/>
+    <circle cx="14" cy="13" r="2.5" fill="#FF6B00"/>
+  </svg>`;
+
+  userM=L.marker([userLat,userLng],{
+    icon:L.divIcon({
+      className:'',
+      html:`<div style="filter:drop-shadow(0 3px 8px rgba(255,107,0,0.6));animation:upulse 2s ease-in-out infinite">
+        ${userPinSVG}
+      </div>`,
+      iconSize:[28,36],
+      iconAnchor:[14,36],
+    }),
+    zIndexOffset:1000,
+  }).addTo(mapInst).bindPopup('<b>📍 Você está aqui</b>');
 }
 
 function drawRadius(){

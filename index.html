@@ -62,6 +62,9 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 [data-theme=light] .sort-select{background:rgba(255,255,255,.9);color:#3A6E8A;border-color:rgba(0,0,0,.14)}
 [data-theme=light] .pcard,[data-theme=light] .mcard,[data-theme=light] .ecard,[data-theme=light] .alink{background:rgba(255,255,255,.7)}
 [data-theme=light] .sbody{background:rgba(228,243,255,.9)}
+[data-theme=light] .overlay{background:rgba(0,0,0,.35)}
+[data-theme=light] .detail{background:rgba(255,255,255,.97)}
+[data-theme=light] .toast{background:rgba(255,255,255,.97)}
 
 /* ══════════════════════════════════════════════════════════
    SPLASH — tela de boas-vindas com logo oficial
@@ -111,7 +114,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 }
 .map-ph{
   position:fixed;inset:0;z-index:0;
-  background:radial-gradient(ellipse at center,#081A2C 0%,#040E1A 100%);
+  background:radial-gradient(ellipse at center,var(--surf) 0%,var(--bg) 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:14px;color:var(--txt3);text-align:center;padding:20px;
 }
@@ -274,7 +277,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 ══════════════════════════════════════════════════════════ */
 .map-badge{
   position:fixed;z-index:50;left:12px;
-  background:rgba(4,14,26,.88);border:1px solid rgba(4,72,157,.3);
+  background:var(--surf);border:1px solid rgba(4,72,157,.3);
   border-radius:20px;padding:5px 12px;
   font-size:11px;font-weight:700;color:var(--ice);
   backdrop-filter:blur(10px);
@@ -283,7 +286,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 }
 .map-expand{
   position:fixed;right:12px;z-index:50;
-  background:rgba(4,14,26,.88);border:1px solid var(--brd2);
+  background:var(--surf);border:1px solid var(--brd2);
   border-radius:10px;padding:6px 13px;
   font-size:11px;font-weight:600;color:var(--txt2);
   cursor:pointer;backdrop-filter:blur(10px);
@@ -569,15 +572,15 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 /* ══════════════════════════════════════════════════════════
    LEAFLET OVERRIDES
 ══════════════════════════════════════════════════════════ */
-.leaflet-container{background:#071828!important}
+.leaflet-container{background:var(--surf)!important}
 .leaflet-control-zoom{border:1px solid var(--brd2)!important;box-shadow:none!important}
-.leaflet-control-zoom a{background:rgba(7,24,40,.9)!important;color:var(--txt1)!important;border-color:var(--brd2)!important;font-size:16px!important}
+.leaflet-control-zoom a{background:var(--surf)!important;color:var(--txt1)!important;border-color:var(--brd2)!important;font-size:16px!important}
 .leaflet-control-zoom a:hover{background:var(--card)!important;color:var(--ice)!important}
-.leaflet-control-attribution{background:rgba(4,14,26,.7)!important;color:var(--txt3)!important;font-size:9px!important}
+.leaflet-control-attribution{background:var(--surf)!important;color:var(--txt3)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--txt2)!important}
-.leaflet-popup-content-wrapper{background:rgba(7,24,40,.95)!important;color:var(--txt1)!important;border:1px solid rgba(4,72,157,.2)!important;border-radius:14px!important;box-shadow:var(--sh)!important;padding:0!important}
+.leaflet-popup-content-wrapper{background:var(--surf)!important;color:var(--txt1)!important;border:1px solid rgba(4,72,157,.2)!important;border-radius:14px!important;box-shadow:var(--sh)!important;padding:0!important}
 .leaflet-popup-content{margin:0!important;padding:12px 14px!important;min-width:180px}
-.leaflet-popup-tip{background:rgba(7,24,40,.95)!important}
+.leaflet-popup-tip{background:var(--surf)!important}
 .leaflet-popup-close-button{color:var(--txt2)!important;font-size:16px!important;padding:8px!important}
 .lp-name{font-size:13px;font-weight:700;margin-bottom:3px}
 .lp-meta{font-size:10px;color:var(--txt2);margin-bottom:8px}
@@ -619,7 +622,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
       <div class="dsub" id="dSub">–</div>
       <div class="drows" id="dRows"></div>
       <div class="dacts">
-        <button class="drota" onclick="openRoute()">🗺 Abrir rota</button>
+        <button class="drota" onclick="openRoute()">🗺 Como Chegar</button>
         <button class="dwpp" onclick="openWpp()">💬</button>
       </div>
     </div>
@@ -981,7 +984,9 @@ function initMapAndLoad(){
     document.getElementById('mapPh').style.display='none';
     mapInst=L.map('map',{center:[userLat,userLng],zoom:15,zoomControl:true});
     mapInst.zoomControl.setPosition('bottomright');
-    tileL=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    const u=isDark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                  :'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    tileL=L.tileLayer(u,
       {attribution:'© <a href="https://openstreetmap.org">OSM</a> © <a href="https://carto.com">CARTO</a>',maxZoom:19,subdomains:'abcd'}).addTo(mapInst);
   }
   placeUserPin();loadNearby();
@@ -1125,7 +1130,7 @@ function renderPartners(rawList){
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
         <button onclick="event.stopPropagation();toggleFav(${p.id},this)" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px">${favIco}</button>
-        <button class="brota" onclick="event.stopPropagation();routeTo(${p.id})">Rota</button>
+        <button class="brota" onclick="event.stopPropagation();routeTo(${p.id})">Como Chegar</button>
       </div>
     </div>`;
   }).join('');

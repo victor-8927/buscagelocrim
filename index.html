@@ -26,8 +26,8 @@
   --ga:0 0 20px rgba(255,107,0,.35);
   --blur:blur(20px) saturate(180%);
   --sheet-min:88px;   /* altura minimizada = só abas visíveis */
-  --sheet-mid:52vh;
-  --sheet-max:92vh;
+  --sheet-mid:38vh;   /* médio — mapa ainda bem visível */
+  --sheet-max:88vh;   /* máximo — quase tela toda */
 }
 [data-theme=light]{
   --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
@@ -201,6 +201,20 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 }
 .map-expand:hover{color:var(--ice);border-color:rgba(0,229,255,.3)}
 
+/* Botão Home — volta ao mapa com sheet minimizado */
+.btn-home{
+  position:fixed;left:12px;z-index:50;
+  width:38px;height:38px;border-radius:50%;
+  background:rgba(4,14,26,.9);
+  border:1px solid var(--brd2);
+  display:none;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;
+  backdrop-filter:blur(10px);
+  box-shadow:var(--sh);
+  transition:bottom .4s cubic-bezier(.4,0,.2,1), opacity .2s;
+}
+.btn-home:active{transform:scale(.9)}
+
 /* ══════════════════════════════════════════════════════════
    BOTTOM SHEET FLUTUANTE — gaveta deslizante
 ══════════════════════════════════════════════════════════ */
@@ -338,9 +352,9 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 .mtrack{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
 .mtrack::-webkit-scrollbar{height:3px}
 .mtrack::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
-.mcard{flex-shrink:0;width:210px;border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);scroll-snap-align:start;background:var(--card);transition:.2s}
+.mcard{flex-shrink:0;width:180px;border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);scroll-snap-align:start;background:var(--card);transition:.2s}
 .mcard:hover{transform:scale(1.02)}
-.mimg{width:100%;height:130px;object-fit:cover;display:block;background:var(--card2)}
+.mimg{width:100%;height:110px;object-fit:cover;display:block;background:var(--card2)}
 .mbody{padding:9px 10px 11px}
 .mtag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
 .mname{font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3}
@@ -508,6 +522,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 <!-- BADGES FLUTUANTES -->
 <div class="map-badge" id="mapBadge">⚡ <span id="mapCnt">0</span> pontos</div>
 <button class="map-expand" id="mapExpand" onclick="cycleSheet()">⬆ Lista</button>
+<button class="btn-home" id="btnHome" onclick="goHome()" title="Ver mapa">🗺</button>
 
 <!-- HEADER FLUTUANTE -->
 <div id="floating-header">
@@ -612,15 +627,19 @@ let localized=false,radius=500,isDark=true;
    HEADER HEIGHT — posiciona badges e sheet corretamente
 ══════════════════════════════════════════════════════════ */
 function updateHeaderOffset(){
-  const h=document.getElementById('floating-header').offsetHeight;
-  const sh=document.getElementById('sheet');
-  const badge=document.getElementById('mapBadge');
-  const expand=document.getElementById('mapExpand');
-  // Sheet fica abaixo do header visualmente nunca ocultando o mapa todo
-  // Os badges ficam acima do sheet
-  const sheetMin=88; // px — altura mínima do sheet
-  badge.style.bottom=(sheetMin+10)+'px';
-  expand.style.bottom=(sheetMin+10)+'px';
+  const sheetMin=88;
+  document.getElementById('mapBadge').style.bottom=(sheetMin+10)+'px';
+  document.getElementById('mapExpand').style.bottom=(sheetMin+10)+'px';
+  document.getElementById('btnHome').style.bottom=(sheetMin+56)+'px';
+}
+
+// Volta ao mapa — minimiza sheet e centraliza na localização
+function goHome(){
+  setSheetState('min');
+  if(mapInst && userLat){
+    const z=radius<=500?16:radius<=1000?15:13;
+    mapInst.flyTo([userLat,userLng],z,{animate:true,duration:.6});
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -638,10 +657,18 @@ function cycleSheet(){
 function setSheetState(s){
   sheetState=s;
   sheet.classList.remove('mid','open');
-  if(s==='mid') sheet.classList.add('mid');
+  if(s==='mid')  sheet.classList.add('mid');
   if(s==='open') sheet.classList.add('open');
+
   const expand=document.getElementById('mapExpand');
+  const home=document.getElementById('btnHome');
+
   expand.textContent=s==='min'?'⬆ Lista':s==='mid'?'⬆ Expandir':'⬇ Fechar';
+
+  // Mostra botão home só quando sheet está expandido
+  if(localized){
+    home.style.display=s!=='min'?'flex':'none';
+  }
 }
 
 // Drag gesture

@@ -12,52 +12,27 @@
 /* ── RESET ─────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#040E1A;--surf:#071828;--card:#0C2236;--card2:#0F2D47;
-  --brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.16);
-  --ice:#00E5FF;--ice2:#00B8CC;
-  --amber:#FF6B00;--amber2:#CC5200;
+  --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
+  --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
+  --ice:#04489D;--ice2:#023371;
+  --amber:#D45000;--amber2:#AA3E00;
   --green:#00E676;--yellow:#FFD600;--red:#FF1744;
-  --txt1:#E8F6FF;--txt2:#5A95B8;--txt3:#254560;
+  --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#35688A;
   --fd:'Bebas Neue',sans-serif;
   --fb:'Inter',system-ui,sans-serif;
   --r:14px;--r2:20px;
-  --sh:0 8px 40px rgba(0,0,0,.6);
-  --gi:0 0 20px rgba(0,229,255,.25);
-  --ga:0 0 20px rgba(255,107,0,.35);
+  --sh:0 8px 40px rgba(0,0,0,.15);
+  --gi:0 0 20px rgba(0,107,138,.2);
+  --ga:0 0 20px rgba(212,80,0,.25);
   --blur:blur(20px) saturate(180%);
   --sheet-min:88px;   /* altura minimizada = só abas visíveis */
   --sheet-mid:38vh;   /* médio — mapa ainda bem visível */
-  --sheet-max:88vh;   /* máximo — quase tela toda */
+  --tabbar-h:58px;    /* altura da tab bar fixa no rodapé */
+  --sheet-max:88vh;   /* valor bruto — usado pelo parseFloat() no JS, que não resolve calc() em custom properties */
+  --sheet-real-max:calc(88vh - var(--tabbar-h)); /* altura efetiva do elemento, já descontando a tab bar — usada em todo CSS de height/transform */
 }
-[data-theme=light]{
-  --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
-  --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
-  --ice:#006B8A;--ice2:#004F68;--amber:#D45000;--amber2:#AA3E00;
-  --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#8AB5CC;
-}
-
-/* Header flutuante no tema claro */
-[data-theme=light] #floating-header{
-  background:rgba(235,245,255,.92);
-  border-bottom:1px solid rgba(0,0,0,.1);
-}
-[data-theme=light] .h-brand h1{color:#040E1A}
-[data-theme=light] .h-brand p{color:#3A6E8A}
-[data-theme=light] .clock-time{color:#040E1A}
-[data-theme=light] .clock-date{color:#3A6E8A}
-[data-theme=light] .clock-tz{color:#8AB5CC}
-[data-theme=light] .clock-sec{color:#3A6E8A}
-[data-theme=light] .clock-sep{background:rgba(0,0,0,.15)}
-[data-theme=light] .sinput{color:#040E1A}
-[data-theme=light] .sinput::placeholder{color:#8AB5CC}
-[data-theme=light] .sfield{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.14)}
-[data-theme=light] .wpill{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
-[data-theme=light] .wcity{color:#3A6E8A}
-[data-theme=light] .ibtn{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
-[data-theme=light] .chip{background:rgba(255,255,255,.9);color:#3A6E8A}
-html,body{height:100%;overflow:hidden;background:#040E1A}
-[data-theme=light] body{background:#EBF5FF}
-body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 
 /* ══════════════════════════════════════════════════════════
    SPLASH — tela de boas-vindas com logo oficial
@@ -96,7 +71,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   animation:spFd .6s .8s both;
   margin-top:8px;
 }
-.sp-fill{height:100%;width:0;background:linear-gradient(90deg,#00E5FF,#FF6B00);transition:width .12s linear}
+.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--ice),var(--amber));transition:width .12s linear}
 
 /* ══════════════════════════════════════════════════════════
    MAPA FULLSCREEN — base de tudo
@@ -115,6 +90,42 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 @keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .map-ph-title{font-family:var(--fd);font-size:22px;letter-spacing:2px;color:var(--txt2)}
 .map-ph-sub{font-size:12px;line-height:1.6;max-width:260px}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE — telas estreitas (a maioria dos acessos reais)
+   Causa raiz do bug de sobreposição: --sheet-max/mid usavam
+   vh puro, que no mobile não desconta a barra de endereço do
+   navegador, e o header não tinha breakpoint próprio — em telas
+   <480px o conjunto logo+brand+saudação+clima não cabia na
+   largura e o sheet aberto avançava sobre o header.
+   dvh resolve a altura real; os ajustes abaixo resolvem a largura.
+══════════════════════════════════════════════════════════ */
+@media (max-width:480px){
+  :root{
+    --sheet-mid:38dvh;
+    --sheet-max:88dvh;
+    --sheet-real-max:calc(88dvh - var(--tabbar-h));
+  }
+  #floating-header{padding:0 10px}
+  .hdr-row1{gap:7px;padding:7px 0 5px}
+  .h-logo{width:28px;height:28px}
+  .h-brand h1{font-size:16px;letter-spacing:1px}
+  .hdr-greet{gap:7px;padding:3px 0 8px}
+  .greet-hello{font-size:17px}
+  .greet-sub{font-size:11px}
+  .wpill{padding:3px 7px}
+  .wtemp{font-size:12px}
+  .wcity{font-size:7px}
+  .search-row{gap:5px}
+  .sfield{padding:7px 10px}
+  .sinput{font-size:12px}
+  .loc-circle{width:38px;height:38px;font-size:15px}
+  .chip{padding:3px 10px;font-size:10px}
+}
+
+@media (max-width:360px){
+  .greet-sub{display:none} /* subtítulo some em telas muito estreitas, mantém saudação + clima */
+}
 
 /* ══════════════════════════════════════════════════════════
    HEADER FLUTUANTE — sobre o mapa, backdrop-blur
@@ -136,12 +147,24 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 .h-logo{
   width:34px;height:34px;border-radius:50%;flex-shrink:0;
   background:linear-gradient(135deg,var(--ice),var(--ice2));
-  display:flex;align-items:center;justify-content:center;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
   box-shadow:var(--gi);
+  color:#fff;
 }
 .h-brand{flex:1;min-width:0}
-.h-brand h1{font-family:var(--fd);font-size:18px;letter-spacing:2px;line-height:1}
-.h-brand p{font-size:8px;color:var(--txt2);margin-top:1px}
+.h-brand h1{font-family:var(--fb);font-size:20px;letter-spacing:0;line-height:1;color:var(--ice);font-weight:800}
+.h-brand h1 .brand-light{font-weight:400;color:var(--ice)}
+
+/* Linha 2: saudação dinâmica + clima */
+.hdr-greet{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px 0 10px;
+}
+.greet-text{min-width:0}
+.greet-hello{font-family:var(--fd);font-size:20px;letter-spacing:1px;color:var(--txt1);line-height:1.1}
+.greet-sub{font-size:12px;color:var(--txt2);margin-top:3px;line-height:1.4}
+.greet-sub b{color:var(--ice);font-weight:700}
+
 .wpill{
   display:flex;align-items:center;gap:4px;
   background:rgba(12,34,54,.6);border:1px solid var(--brd2);
@@ -149,31 +172,6 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 }
 .wtemp{font-size:14px;font-weight:800;color:var(--amber);line-height:1}
 .wcity{font-size:8px;color:var(--txt2)}
-.ibtn{
-  width:32px;height:32px;border-radius:50%;
-  background:rgba(12,34,54,.6);border:1px solid var(--brd2);
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;cursor:pointer;transition:.2s;flex-shrink:0;
-}
-.ibtn:active{transform:scale(.88)}
-
-/* Linha 2: relógio */
-.hdr-row2{
-  display:flex;align-items:center;gap:10px;
-  padding:4px 0 8px;
-  border-top:1px solid rgba(255,255,255,.05);
-}
-#clockCanvas{flex-shrink:0;border-radius:50%;box-shadow:0 0 0 2px rgba(180,140,20,.6)}
-.clock-sep{width:1px;height:28px;background:var(--brd2);flex-shrink:0}
-.clock-digital{flex:1}
-.clock-time{
-  font-family:var(--fd);font-size:20px;letter-spacing:2px;
-  color:var(--txt1);line-height:1;
-  display:flex;align-items:baseline;gap:4px;
-}
-.clock-sec{font-size:12px;font-weight:600;color:var(--txt2);letter-spacing:1px}
-.clock-date{font-size:9px;color:var(--txt2);margin-top:2px}
-.clock-tz{font-size:8px;color:var(--txt3);margin-top:1px}
 
 /* Linha 3: busca + chips (colapsável) */
 .hdr-row3{padding:0 0 8px;display:flex;flex-direction:column;gap:6px}
@@ -183,22 +181,21 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   background:rgba(12,34,54,.7);border:1px solid var(--brd2);
   border-radius:var(--r);padding:8px 12px;transition:.2s;
 }
-.sfield:focus-within{border-color:var(--ice);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+.sfield:focus-within{border-color:var(--ice);box-shadow:0 0 0 3px rgba(4,72,157,.1)}
 .sico{font-size:14px;color:var(--txt3);flex-shrink:0}
 .sinput{
   flex:1;background:none;border:none;outline:none;
   font-size:13px;font-family:var(--fb);color:var(--txt1);
 }
 .sinput::placeholder{color:var(--txt3)}
-.bloc{
-  background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border:none;border-radius:var(--r);padding:8px 13px;
-  font-size:12px;font-weight:700;font-family:var(--fb);
-  color:#fff;cursor:pointer;flex-shrink:0;
-  box-shadow:var(--ga);transition:.15s;
-  display:flex;align-items:center;gap:5px;
+.loc-circle{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--ice),var(--ice2));
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:var(--gi);transition:.15s;
 }
-.bloc:active{transform:scale(.95)}
+.loc-circle:active{transform:scale(.9)}
 .chips{display:flex;gap:6px;overflow-x:auto}
 .chips::-webkit-scrollbar{display:none}
 .chip{
@@ -218,7 +215,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 ══════════════════════════════════════════════════════════ */
 .map-badge{
   position:fixed;z-index:50;left:12px;
-  background:rgba(4,14,26,.88);border:1px solid rgba(0,229,255,.3);
+  background:rgba(4,14,26,.88);border:1px solid rgba(4,72,157,.3);
   border-radius:20px;padding:5px 12px;
   font-size:11px;font-weight:700;color:var(--ice);
   backdrop-filter:blur(10px);
@@ -233,14 +230,14 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   cursor:pointer;backdrop-filter:blur(10px);
   transition:opacity .3s,bottom .4s cubic-bezier(.4,0,.2,1),color .2s;
 }
-.map-expand:hover{color:var(--ice);border-color:rgba(0,229,255,.3)}
+.map-expand:hover{color:var(--ice);border-color:rgba(4,72,157,.3)}
 .btn-home{
   position:fixed;right:12px;z-index:50;
   width:46px;height:46px;border-radius:50%;
   background:linear-gradient(135deg,var(--ice),var(--ice2));
   border:none;display:none;align-items:center;justify-content:center;
   font-size:20px;cursor:pointer;
-  box-shadow:0 4px 16px rgba(0,229,255,.45);
+  box-shadow:0 4px 16px rgba(4,72,157,.45);
   transition:opacity .3s,bottom .4s cubic-bezier(.4,0,.2,1);
 }
 .btn-home:active{transform:scale(.9)}
@@ -251,7 +248,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
    BOTTOM SHEET FLUTUANTE — gaveta deslizante
 ══════════════════════════════════════════════════════════ */
 #sheet{
-  position:fixed;left:0;right:0;bottom:0;z-index:80;
+  position:fixed;left:0;right:0;bottom:var(--tabbar-h);z-index:80;
   background:rgba(7,24,40,.92);
   -webkit-backdrop-filter:var(--blur);
   backdrop-filter:var(--blur);
@@ -259,15 +256,37 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   border-radius:22px 22px 0 0;
   box-shadow:0 -8px 40px rgba(0,0,0,.5);
   /* altura controlada por JS via transform */
-  height:var(--sheet-max);
-  transform:translateY(calc(var(--sheet-max) - var(--sheet-min)));
+  height:var(--sheet-real-max);
+  transform:translateY(calc(var(--sheet-real-max) - var(--sheet-min)));
   transition:transform .4s cubic-bezier(.4,0,.2,1);
   display:flex;flex-direction:column;
   overflow:hidden;
   touch-action:none;
 }
-#sheet.mid{transform:translateY(calc(var(--sheet-max) - var(--sheet-mid)))}
+#sheet.mid{transform:translateY(calc(var(--sheet-real-max) - var(--sheet-mid)))}
 #sheet.open{transform:translateY(0)}
+
+/* ══════════════════════════════════════════════════════════
+   TAB BAR FIXA — Início / Mapa / Favoritos / Sobre
+══════════════════════════════════════════════════════════ */
+#tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:150;
+  height:var(--tabbar-h);
+  background:rgba(7,24,40,.96);
+  -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border-top:1px solid var(--brd2);
+  display:flex;align-items:stretch;
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+.tabbar-item{
+  flex:1;background:none;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--txt2);transition:.15s;
+}
+.tabbar-item.active{color:var(--ice)}
+.tabbar-ico{font-size:18px;line-height:1}
+.tabbar-label{font-size:9px;font-weight:600;font-family:var(--fb)}
+.tabbar-item:active{transform:scale(.92)}
 
 /* drag handle */
 .drag{
@@ -288,6 +307,12 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   display:flex;align-items:center;justify-content:space-between;
 }
 .sheet-title{font-family:var(--fd);font-size:20px;letter-spacing:1px}
+.sheet-head-right{display:flex;align-items:center;gap:8px}
+.sort-select{
+  background:rgba(12,34,54,.6);border:1px solid var(--brd2);border-radius:20px;
+  padding:3px 8px;font-size:10px;font-weight:600;color:var(--txt2);
+  font-family:var(--fb);cursor:pointer;outline:none;
+}
 .sheet-count{font-size:11px;color:var(--txt2)}
 
 /* tabs */
@@ -344,8 +369,8 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   display:flex;align-items:center;gap:10px;
   cursor:pointer;transition:border-color .2s;
 }
-.pcard:hover{border-color:rgba(0,229,255,.25)}
-.pcard.sel{border-color:var(--ice);box-shadow:0 0 0 1px rgba(0,229,255,.12)}
+.pcard:hover{border-color:rgba(4,72,157,.25)}
+.pcard.sel{border-color:var(--ice);box-shadow:0 0 0 1px rgba(4,72,157,.12)}
 .pico{
   width:42px;height:42px;border-radius:12px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -357,7 +382,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 .pbadges{display:flex;gap:4px;flex-wrap:wrap}
 .badge{display:inline-flex;align-items:center;gap:2px;border-radius:20px;padding:2px 7px;font-size:9px;font-weight:700}
 .b-ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.25);color:var(--green)}
-.b-ice{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--ice)}
+.b-ice{background:rgba(4,72,157,.1);border:1px solid rgba(4,72,157,.2);color:var(--ice)}
 .b-seg{border:1px solid}
 .brota{
   background:linear-gradient(135deg,var(--amber),var(--amber2));
@@ -411,7 +436,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   font-size:11px;color:var(--ice);font-weight:600;cursor:pointer;
   text-decoration:none;transition:border-color .2s;flex-shrink:0;
 }
-.alink:hover{border-color:rgba(0,229,255,.3)}
+.alink:hover{border-color:rgba(4,72,157,.3)}
 .ecard{
   background:rgba(12,34,54,.7);border:1px solid var(--brd);
   border-radius:var(--r);overflow:hidden;cursor:pointer;transition:.2s;
@@ -425,7 +450,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 .einfo span{font-size:11px;color:var(--txt2);line-height:1.5}
 .echips{display:flex;gap:5px;flex-wrap:wrap;padding:0 12px 10px}
 .ec{font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px}
-.ec-l{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);color:var(--ice)}
+.ec-l{background:rgba(4,72,157,.08);border:1px solid rgba(4,72,157,.2);color:var(--ice)}
 .ec-g{background:rgba(255,107,0,.08);border:1px solid rgba(255,107,0,.2);color:var(--amber)}
 .ec-f{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--green)}
 .ec-p{background:rgba(255,214,0,.08);border:1px solid rgba(255,214,0,.2);color:var(--yellow)}
@@ -485,7 +510,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 .leaflet-control-zoom a:hover{background:var(--card)!important;color:var(--ice)!important}
 .leaflet-control-attribution{background:rgba(4,14,26,.7)!important;color:var(--txt3)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--txt2)!important}
-.leaflet-popup-content-wrapper{background:rgba(7,24,40,.95)!important;color:var(--txt1)!important;border:1px solid rgba(0,229,255,.2)!important;border-radius:14px!important;box-shadow:var(--sh)!important;padding:0!important}
+.leaflet-popup-content-wrapper{background:rgba(7,24,40,.95)!important;color:var(--txt1)!important;border:1px solid rgba(4,72,157,.2)!important;border-radius:14px!important;box-shadow:var(--sh)!important;padding:0!important}
 .leaflet-popup-content{margin:0!important;padding:12px 14px!important;min-width:180px}
 .leaflet-popup-tip{background:rgba(7,24,40,.95)!important}
 .leaflet-popup-close-button{color:var(--txt2)!important;font-size:16px!important;padding:8px!important}
@@ -547,37 +572,39 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 
 <!-- BADGES FLUTUANTES -->
 <div class="map-badge" id="mapBadge">⚡ <span id="mapCnt">0</span> pontos</div>
-<button class="map-expand" id="mapExpand" onclick="cycleSheet()">⬆ Lista</button>
-<button class="btn-home" id="btnHome" onclick="goHome()" title="Ver mapa">🗺</button>
+<button class="map-expand" id="mapExpand" onclick="cycleSheet()">⬆ Mais</button>
+<button class="btn-home" id="btnHome" onclick="goHome()" title="Ver mapa" style="display:flex">🗺</button>
 
 <!-- HEADER FLUTUANTE -->
 <div id="floating-header">
-  <!-- Linha 1: logo + clima + toggle -->
+  <!-- Linha 1: logo + nome do app -->
   <div class="hdr-row1">
-    <div class="h-logo">🧊</div>
-    <div class="h-brand">
-      <h1>BUSCA GELOCRIM</h1>
-      <p>Amazon Indústria de Gelo · Manaus, AM</p>
+    <div class="h-logo">
+      <svg viewBox="0 0 48 48" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+        <line x1="24" y1="4" x2="24" y2="44"/>
+        <line x1="6.4" y1="14" x2="41.6" y2="34"/>
+        <line x1="6.4" y1="34" x2="41.6" y2="14"/>
+        <polyline points="19,9 24,4 29,9"/>
+        <polyline points="19,39 24,44 29,39"/>
+        <polyline points="9,19 6.4,14 12,15.5"/>
+        <polyline points="36,32.5 41.6,34 39,28.5"/>
+        <polyline points="9,29 6.4,34 12,32.5"/>
+        <polyline points="36,15.5 41.6,14 39,19.5"/>
+      </svg>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-      <div class="wpill">
-        <span id="wIco">🌤</span>
-        <div><div class="wtemp" id="wTemp">–°</div><div class="wcity">Manaus</div></div>
-      </div>
-      <button class="ibtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    <div class="h-brand">
+      <h1><span class="brand-light">busca</span>GELOCRIM</h1>
     </div>
   </div>
-  <!-- Linha 2: relógio -->
-  <div class="hdr-row2">
-    <canvas id="clockCanvas" width="40" height="40"></canvas>
-    <div class="clock-sep"></div>
-    <div class="clock-digital">
-      <div class="clock-time">
-        <span id="clockHM">--:--</span>
-        <span class="clock-sec" id="clockS">--</span>
-      </div>
-      <div class="clock-date" id="clockDate">–</div>
-      <div class="clock-tz">Manaus · Amazônia · UTC-4</div>
+  <!-- Linha 2: saudação dinâmica + clima -->
+  <div class="hdr-greet">
+    <div class="greet-text">
+      <div class="greet-hello" id="greetHello">Boa tarde!</div>
+      <div class="greet-sub">Encontre a <b>refrescância</b> perto de você!</div>
+    </div>
+    <div class="wpill">
+      <span id="wIco">🌤</span>
+      <div><div class="wtemp" id="wTemp">–°</div><div class="wcity">Manaus, AM</div></div>
     </div>
   </div>
   <!-- Linha 3: busca -->
@@ -586,11 +613,11 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
       <div class="sfield">
         <span class="sico">🔍</span>
         <input class="sinput" id="sInput" type="text"
-          placeholder="Buscar bairro ou estabelecimento..."
+          placeholder="Buscar endereço ou bairro..."
           oninput="onSearch()"/>
       </div>
-      <button class="bloc" id="locBtn" onclick="handleLocate()">
-        <span id="locIco">📍</span><span id="locTxt">Localizar</span>
+      <button class="loc-circle" id="locBtn" onclick="handleLocate()" title="Ativar localização">
+        <span id="locIco">📍</span>
       </button>
     </div>
     <div class="chips">
@@ -602,13 +629,19 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 </div>
 
 <!-- BOTTOM SHEET FLUTUANTE -->
-<div id="sheet">
+<div id="sheet" class="mid">
   <div class="drag" id="dragHandle">
     <div class="dhandle"></div>
   </div>
   <div class="sheet-head">
     <span class="sheet-title" id="shTitle">PARCEIROS</span>
-    <span class="sheet-count" id="shCount"></span>
+    <div class="sheet-head-right">
+      <select class="sort-select" id="sortSelect" onchange="onSortChange()">
+        <option value="dist">📍 Distância</option>
+        <option value="name">🔤 Nome</option>
+      </select>
+      <span class="sheet-count" id="shCount"></span>
+    </div>
   </div>
   <div class="stabs">
     <div class="stab active" onclick="setTab(this,'p')">🏪 Perto de mim</div>
@@ -629,6 +662,52 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   <div class="awrap" id="ta" style="display:none"></div>
 </div>
 
+<!-- TAB BAR FIXA -->
+<nav id="tabbar">
+  <button class="tabbar-item active" id="tabHome" onclick="tabbarGo('home')">
+    <span class="tabbar-ico">🏠</span><span class="tabbar-label">Início</span>
+  </button>
+  <button class="tabbar-item" id="tabMap" onclick="tabbarGo('map')">
+    <span class="tabbar-ico">🗺</span><span class="tabbar-label">Mapa</span>
+  </button>
+  <button class="tabbar-item" id="tabFav" onclick="tabbarGo('fav')">
+    <span class="tabbar-ico">❤️</span><span class="tabbar-label">Favoritos</span>
+  </button>
+  <button class="tabbar-item" id="tabAbout" onclick="tabbarGo('about')">
+    <span class="tabbar-ico">ℹ️</span><span class="tabbar-label">Sobre</span>
+  </button>
+</nav>
+
+<!-- MODAL FAVORITOS -->
+<div class="overlay" id="favOverlay">
+  <div class="detail">
+    <div class="ddrag"><span class="dhandle-line"></span></div>
+    <div class="dbody">
+      <button class="dclose" onclick="closeFav()" style="position:static;float:right">✕</button>
+      <div class="dname">❤️ Favoritos</div>
+      <div class="dsub" id="favSub">Seus pontos GeloCrim salvos</div>
+      <div id="favList" style="margin-top:14px;display:flex;flex-direction:column;gap:7px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SOBRE -->
+<div class="overlay" id="aboutOverlay">
+  <div class="detail">
+    <div class="ddrag"><span class="dhandle-line"></span></div>
+    <div class="dbody">
+      <button class="dclose" onclick="closeAbout()" style="position:static;float:right">✕</button>
+      <div class="dname">🧊 Busca GeloCrim</div>
+      <div class="dsub">Amazon Indústria de Gelo · Manaus, AM</div>
+      <div class="drows" style="margin-top:14px">
+        <div class="drow"><span class="dico">📍</span><div><span class="dlbl">O que é</span><span class="dval" style="font-weight:400;line-height:1.5">Encontre o ponto GeloCrim mais próximo de você em Manaus, com distância, rota e disponibilidade em tempo real.</span></div></div>
+        <div class="drow"><span class="dico">🏢</span><div><span class="dlbl">Empresa</span><span class="dval" style="font-weight:400">Amazon Indústria de Gelo Ltda.</span></div></div>
+        <div class="drow"><span class="dico">📶</span><div><span class="dlbl">Dados</span><span class="dval" style="font-weight:400">Atualizados via Supabase em tempo real</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 const SB='https://iixeixcungwnfentfqxo.supabase.co';
@@ -647,7 +726,7 @@ const SEG={
 
 let mapInst=null,tileL=null,markers=[],userM=null,radiusC=null;
 let curP=null,partners=[],userLat=null,userLng=null;
-let localized=false,radius=500,isDark=true;
+let localized=false,radius=500;
 
 /* ══════════════════════════════════════════════════════════
    HEADER HEIGHT — posiciona badges e sheet corretamente
@@ -708,7 +787,7 @@ function goHome(){
 /* ══════════════════════════════════════════════════════════
    BOTTOM SHEET — drag e ciclo de estados
 ══════════════════════════════════════════════════════════ */
-let sheetState='min'; // min | mid | open
+let sheetState='mid'; // min | mid | open — inicia em 'mid' para o card de GPS CTA não ficar cortado
 const sheet=document.getElementById('sheet');
 
 function cycleSheet(){
@@ -803,10 +882,10 @@ function handleLocate(){
 }
 
 function setLoc(s){
-  const i=document.getElementById('locIco'),t=document.getElementById('locTxt');
-  if(s==='loading'){i.innerHTML='<span class="spin"></span>';t.textContent='Localizando...'}
-  else if(s==='done'){i.textContent='✅';t.textContent='Perto de mim'}
-  else{i.textContent='📍';t.textContent='Localizar'}
+  const i=document.getElementById('locIco'),b=document.getElementById('locBtn');
+  if(s==='loading'){i.innerHTML='<span class="spin"></span>';b.title='Localizando...'}
+  else if(s==='done'){i.textContent='✅';b.title='Localização ativa'}
+  else{i.textContent='📍';b.title='Ativar localização'}
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -914,22 +993,40 @@ function placeUserPin(){
 
 function drawRadius(){
   if(radiusC)mapInst.removeLayer(radiusC);
-  radiusC=L.circle([userLat,userLng],{radius,color:'#00E5FF',weight:1.5,opacity:.6,dashArray:'10,6',fillColor:'#00E5FF',fillOpacity:.04}).addTo(mapInst);
+  const iceColor=getComputedStyle(document.documentElement).getPropertyValue('--ice').trim();
+  radiusC=L.circle([userLat,userLng],{radius,color:iceColor,weight:1.5,opacity:.6,dashArray:'10,6',fillColor:iceColor,fillOpacity:.04}).addTo(mapInst);
 }
 
 /* ══════════════════════════════════════════════════════════
    RENDER PARCEIROS
 ══════════════════════════════════════════════════════════ */
-function renderPartners(list){
+let sortBy='dist'; // dist | name
+
+function sortPartners(list){
+  const arr=[...list];
+  if(sortBy==='name') arr.sort((a,b)=>a.trade_name.localeCompare(b.trade_name,'pt-BR'));
+  else arr.sort((a,b)=>a.distance_m-b.distance_m);
+  return arr;
+}
+
+function onSortChange(){
+  sortBy=document.getElementById('sortSelect').value;
+  if(localized) onSearch(); // reaplica filtro de busca ativo (se houver) + nova ordenação
+}
+
+function renderPartners(rawList){
+  const list=sortPartners(rawList);
   document.getElementById('shCount').textContent=list.length+' encontrados';
   const el=document.getElementById('tp');
   if(!list.length){
     el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div>Nenhum ponto nesse raio.<br><small>Tente ampliar para 1km ou 3km.</small></div>';
     return;
   }
+  const favIds=getFavIds();
   el.innerHTML=list.map((p,i)=>{
     const s=SEG[p.segment]||SEG['A confirmar'];
     const d=p.distance_m<1000?p.distance_m+'m':(p.distance_m/1000).toFixed(1)+'km';
+    const favIco=favIds.includes(p.id)?'❤️':'🤍';
     return`<div class="pcard${i===0?' sel':''}" onclick="openDetail(${p.id})">
       <div class="pico" style="background:${s.bg};border-color:${s.bd}50">${s.ico}</div>
       <div class="pbody">
@@ -941,7 +1038,10 @@ function renderPartners(list){
           <span class="badge b-seg" style="background:${s.bg};border-color:${s.bd};color:${s.co}">${s.ico} ${p.segment.split('/')[0]}</span>
         </div>
       </div>
-      <button class="brota" onclick="event.stopPropagation();routeTo(${p.id})">Rota</button>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0">
+        <button onclick="event.stopPropagation();toggleFav(${p.id},this)" style="background:none;border:none;font-size:15px;cursor:pointer;padding:2px">${favIco}</button>
+        <button class="brota" onclick="event.stopPropagation();routeTo(${p.id})">Rota</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -973,6 +1073,81 @@ function openDetail(id){
   document.getElementById('overlay').classList.add('open');
 }
 function closeDetail(){document.getElementById('overlay').classList.remove('open')}
+
+/* ══════════════════════════════════════════════════════════
+   FAVORITOS — persistidos em localStorage
+══════════════════════════════════════════════════════════ */
+const FAV_KEY='gelocrim_favoritos';
+
+function getFavIds(){
+  try{return JSON.parse(localStorage.getItem(FAV_KEY))||[]}catch{return[]}
+}
+function saveFavIds(ids){
+  try{localStorage.setItem(FAV_KEY,JSON.stringify(ids))}catch{}
+}
+function isFav(id){return getFavIds().includes(id)}
+
+function toggleFav(id,btnEl){
+  const ids=getFavIds();
+  const idx=ids.indexOf(id);
+  if(idx>-1){ids.splice(idx,1)}else{ids.push(id)}
+  saveFavIds(ids);
+  if(btnEl) btnEl.textContent=idx>-1?'🤍':'❤️';
+}
+
+function renderFavorites(){
+  const ids=getFavIds();
+  const el=document.getElementById('favList');
+  const sub=document.getElementById('favSub');
+  const known=partners.filter(p=>ids.includes(p.id));
+  sub.textContent=known.length
+    ? `${known.length} ponto${known.length>1?'s':''} salvo${known.length>1?'s':''}`
+    : 'Nenhum favorito ainda';
+  if(!known.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">🤍</div>Toque no coração de um parceiro<br><small>para salvá-lo aqui.</small></div>';
+    return;
+  }
+  el.innerHTML=known.map(p=>{
+    const s=SEG[p.segment]||SEG['A confirmar'];
+    return`<div class="pcard" onclick="openDetail(${p.id})">
+      <div class="pico" style="background:${s.bg};border-color:${s.bd}50">${s.ico}</div>
+      <div class="pbody">
+        <div class="pname">${p.trade_name}</div>
+        <div class="pmeta">🏘 ${p.district||'–'}</div>
+      </div>
+      <button class="brota" onclick="event.stopPropagation();toggleFav(${p.id},this);renderFavorites()" style="background:none;box-shadow:none;font-size:16px">❤️</button>
+    </div>`;
+  }).join('');
+}
+
+function openFav(){renderFavorites();document.getElementById('favOverlay').classList.add('open')}
+function closeFav(){document.getElementById('favOverlay').classList.remove('open')}
+function openAbout(){document.getElementById('aboutOverlay').classList.add('open')}
+function closeAbout(){document.getElementById('aboutOverlay').classList.remove('open')}
+
+/* ══════════════════════════════════════════════════════════
+   TAB BAR — navegação
+══════════════════════════════════════════════════════════ */
+function tabbarSetActive(id){
+  document.querySelectorAll('.tabbar-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function tabbarGo(dest){
+  if(dest==='home'){
+    tabbarSetActive('tabHome');
+    setSheetState('mid');
+  }else if(dest==='map'){
+    tabbarSetActive('tabMap');
+    goHome();
+  }else if(dest==='fav'){
+    tabbarSetActive('tabFav');
+    openFav();
+  }else if(dest==='about'){
+    tabbarSetActive('tabAbout');
+    openAbout();
+  }
+}
 function openRoute(){routeTo(curP?.id)}
 function routeTo(id){
   const p=partners.find(x=>x.id===id)||curP;if(!p)return;
@@ -1207,59 +1382,15 @@ function getManausTime(){
   return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Manaus'}));
 }
 
-function drawClock(){
-  const canvas=document.getElementById('clockCanvas');
-  if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  const t=getManausTime();
-  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=W/2-2;
-  ctx.clearRect(0,0,W,H);
-  const g=ctx.createRadialGradient(cx,cy,r-3,cx,cy,r+1);
-  g.addColorStop(0,'#B8860B');g.addColorStop(.4,'#F0C020');g.addColorStop(.7,'#9A7010');g.addColorStop(1,'#F0C020');
-  ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle=g;ctx.fill();
-  ctx.beginPath();ctx.arc(cx,cy,r-3,0,2*Math.PI);ctx.fillStyle=isDark?'#F5F0E0':'#FAFAF5';ctx.fill();
-  for(let i=0;i<12;i++){
-    const a=(i/12)*2*Math.PI-Math.PI/2,isM=i%3===0;
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(a)*(r-(isM?9:7)),cy+Math.sin(a)*(r-(isM?9:7)));
-    ctx.lineTo(cx+Math.cos(a)*(r-(isM?4:5)),cy+Math.sin(a)*(r-(isM?4:5)));
-    ctx.strokeStyle='#141820';ctx.lineWidth=isM?2:1;ctx.lineCap='round';ctx.stroke();
-  }
-  const h=t.getHours()%12,m=t.getMinutes(),s=t.getSeconds();
-  const hA=((h+m/60)/12)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(hA)*(r*.52),cy+Math.sin(hA)*(r*.52));
-  ctx.strokeStyle='#141820';ctx.lineWidth=3.5;ctx.lineCap='round';ctx.stroke();
-  const mA=(m/60)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(mA)*(r*.75),cy+Math.sin(mA)*(r*.75));
-  ctx.strokeStyle='#141820';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
-  const sA=(s/60)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();ctx.moveTo(cx-Math.cos(sA)*4,cy-Math.sin(sA)*4);
-  ctx.lineTo(cx+Math.cos(sA)*(r*.86),cy+Math.sin(sA)*(r*.86));
-  ctx.strokeStyle='#CC1A10';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.stroke();
-  ctx.beginPath();ctx.arc(cx,cy,3,0,2*Math.PI);ctx.fillStyle='#141820';ctx.fill();
-  ctx.beginPath();ctx.arc(cx,cy,1.5,0,2*Math.PI);ctx.fillStyle='#CC1A10';ctx.fill();
-  const hh=String(h===0?12:h).padStart(2,'0'),mm=String(m).padStart(2,'0'),ss=String(s).padStart(2,'0');
-  document.getElementById('clockHM').textContent=`${hh}:${mm}`;
-  document.getElementById('clockS').textContent=ss;
-  document.getElementById('clockDate').textContent=`${DIAS[t.getDay()]}, ${t.getDate()} de ${MESES[t.getMonth()]} de ${t.getFullYear()}`;
+function updateGreeting(){
+  const h=getManausTime().getHours();
+  const saudacao = h<12 ? 'Bom dia!' : h<18 ? 'Boa tarde!' : 'Boa noite!';
+  document.getElementById('greetHello').textContent=saudacao;
 }
-drawClock();
-setInterval(drawClock,1000);
 
-/* ══════════════════════════════════════════════════════════
-   TEMA
-══════════════════════════════════════════════════════════ */
-function toggleTheme(){
-  isDark=!isDark;
-  document.documentElement.setAttribute('data-theme',isDark?'':'light');
-  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
-  if(mapInst&&tileL){
-    mapInst.removeLayer(tileL);
-    const u=isDark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                  :'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-    tileL=L.tileLayer(u,{attribution:'© <a href="https://openstreetmap.org">OSM</a> © <a href="https://carto.com">CARTO</a>',maxZoom:19,subdomains:'abcd'}).addTo(mapInst);
-  }
-}
+/* Relógio analógico e alternância de tema foram removidos neste
+   redesign (mockup não os inclui). getManausTime() é mantida —
+   reaproveitada para a saudação dinâmica do header. */
 
 /* ══════════════════════════════════════════════════════════
    CLIMA
@@ -1313,7 +1444,8 @@ function runSplash(cb){
 
 runSplash(()=>{
   updateHeaderOffset();
-  setSheetState('min'); // começa sempre minimizado — mapa em foco
+  setSheetState('mid'); // GPS CTA precisa de espaço para aparecer inteiro, sem cortar
+  updateGreeting();
   renderManaus();
   renderSabias();
   renderAgenda();

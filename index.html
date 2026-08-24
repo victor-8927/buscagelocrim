@@ -36,8 +36,28 @@
   --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#8AB5CC;
 }
 
+/* Header flutuante no tema claro */
+[data-theme=light] #floating-header{
+  background:rgba(235,245,255,.92);
+  border-bottom:1px solid rgba(0,0,0,.1);
+}
+[data-theme=light] .h-brand h1{color:#040E1A}
+[data-theme=light] .h-brand p{color:#3A6E8A}
+[data-theme=light] .clock-time{color:#040E1A}
+[data-theme=light] .clock-date{color:#3A6E8A}
+[data-theme=light] .clock-tz{color:#8AB5CC}
+[data-theme=light] .clock-sec{color:#3A6E8A}
+[data-theme=light] .clock-sep{background:rgba(0,0,0,.15)}
+[data-theme=light] .sinput{color:#040E1A}
+[data-theme=light] .sinput::placeholder{color:#8AB5CC}
+[data-theme=light] .sfield{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.14)}
+[data-theme=light] .wpill{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
+[data-theme=light] .wcity{color:#3A6E8A}
+[data-theme=light] .ibtn{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
+[data-theme=light] .chip{background:rgba(255,255,255,.9);color:#3A6E8A}
 html,body{height:100%;overflow:hidden;background:#040E1A}
-body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
+[data-theme=light] body{background:#EBF5FF}
+body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
 
 /* ══════════════════════════════════════════════════════════
    SPLASH
@@ -203,14 +223,15 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 
 /* Botão Home — volta ao mapa com sheet minimizado */
 .btn-home{
-  position:fixed;right:12px;z-index:50;
-  width:44px;height:44px;border-radius:50%;
+  position:fixed;right:12px;z-index:90;
+  width:46px;height:46px;border-radius:50%;
   background:linear-gradient(135deg,var(--ice),var(--ice2));
   border:none;
   display:none;align-items:center;justify-content:center;
   font-size:20px;cursor:pointer;
-  box-shadow:0 4px 16px rgba(0,229,255,.4);
+  box-shadow:0 4px 16px rgba(0,229,255,.45);
   transition:bottom .4s cubic-bezier(.4,0,.2,1), opacity .2s;
+  bottom:calc(var(--sheet-min) + 60px);
 }
 .btn-home:active{transform:scale(.9)}
 
@@ -358,17 +379,16 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
    VOCÊ SABIA
 ══════════════════════════════════════════════════════════ */
 .scard{border-radius:var(--r);overflow:hidden;border:1px solid var(--brd)}
-.shero{padding:16px;display:flex;align-items:center;gap:14px;position:relative}
+.shero{padding:13px 14px;display:flex;align-items:center;gap:12px;position:relative}
 .shero-bg{position:absolute;inset:0;z-index:0}
-.shero-c{position:relative;z-index:1;display:flex;align-items:center;gap:14px;width:100%}
-.shero-ico{width:52px;height:52px;border-radius:14px;flex-shrink:0;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:24px}
-.shero-text{flex:1}
-.shero-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.65);margin-bottom:3px}
-.shero-title{font-size:15px;font-weight:800;color:#fff;line-height:1.25}
-.shero-num{font-family:var(--fd);font-size:48px;letter-spacing:-1px;color:rgba(255,255,255,.12);line-height:1;flex-shrink:0}
-.sbody{padding:12px 14px;background:rgba(12,34,54,.8)}
-.stxt{font-size:12px;color:var(--txt2);line-height:1.65;margin-bottom:6px}
-.sstat{font-size:13px;font-weight:700;color:var(--ice)}
+.shero-c{position:relative;z-index:1;display:flex;align-items:center;gap:12px;width:100%}
+.shero-ico{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:20px}
+.shero-text{flex:1;min-width:0}
+.shero-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.7);margin-bottom:3px}
+.shero-title{font-size:13px;font-weight:800;color:#fff;line-height:1.3}
+.sbody{padding:10px 14px 11px;background:rgba(12,34,54,.8)}
+.stxt{font-size:11px;color:var(--txt2);line-height:1.6;margin-bottom:5px}
+.sstat{font-size:11px;font-weight:700;color:var(--ice)}
 
 /* ══════════════════════════════════════════════════════════
    AGENDA
@@ -622,9 +642,12 @@ let localized=false,radius=500,isDark=true;
 ══════════════════════════════════════════════════════════ */
 function updateHeaderOffset(){
   const sheetMin=88;
-  document.getElementById('mapBadge').style.bottom=(sheetMin+10)+'px';
-  document.getElementById('mapExpand').style.bottom=(sheetMin+10)+'px';
-  document.getElementById('btnHome').style.bottom=(sheetMin+60)+'px';
+  const badge=document.getElementById('mapBadge');
+  const expand=document.getElementById('mapExpand');
+  const home=document.getElementById('btnHome');
+  if(badge)  badge.style.bottom=(sheetMin+10)+'px';
+  if(expand) expand.style.bottom=(sheetMin+10)+'px';
+  if(home)   home.style.bottom=(sheetMin+62)+'px';
 }
 
 // Volta ao mapa — minimiza sheet e centraliza na localização
@@ -722,8 +745,9 @@ function handleLocate(){
   navigator.geolocation.getCurrentPosition(
     pos=>{
       userLat=pos.coords.latitude;userLng=pos.coords.longitude;localized=true;
-      setLoc('done');initMapAndLoad();
-      setSheetState('mid'); // abre sheet parcialmente após localizar
+    setLoc('done');
+    initMapAndLoad();
+    setSheetState('mid');
     },
     ()=>{showToast('⚠️ GPS negado','Permita o acesso à localização');setLoc('idle')},
     {timeout:10000,enableHighAccuracy:true}
@@ -993,10 +1017,9 @@ function renderSabias(){
         <div class="shero-c">
           <div class="shero-ico">${s.ico}</div>
           <div class="shero-text">
-            <div class="shero-tag">${s.tag}</div>
+            <div class="shero-tag">${s.tag} · ${s.num}</div>
             <div class="shero-title">${s.title}</div>
           </div>
-          <div class="shero-num">${s.num}</div>
         </div>
       </div>
       <div class="sbody">

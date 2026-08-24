@@ -203,14 +203,13 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 
 /* Botão Home — volta ao mapa com sheet minimizado */
 .btn-home{
-  position:fixed;left:12px;z-index:50;
-  width:38px;height:38px;border-radius:50%;
-  background:rgba(4,14,26,.9);
-  border:1px solid var(--brd2);
+  position:fixed;right:12px;z-index:50;
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--ice),var(--ice2));
+  border:none;
   display:none;align-items:center;justify-content:center;
-  font-size:16px;cursor:pointer;
-  backdrop-filter:blur(10px);
-  box-shadow:var(--sh);
+  font-size:20px;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,229,255,.4);
   transition:bottom .4s cubic-bezier(.4,0,.2,1), opacity .2s;
 }
 .btn-home:active{transform:scale(.9)}
@@ -630,7 +629,7 @@ function updateHeaderOffset(){
   const sheetMin=88;
   document.getElementById('mapBadge').style.bottom=(sheetMin+10)+'px';
   document.getElementById('mapExpand').style.bottom=(sheetMin+10)+'px';
-  document.getElementById('btnHome').style.bottom=(sheetMin+56)+'px';
+  document.getElementById('btnHome').style.bottom=(sheetMin+60)+'px';
 }
 
 // Volta ao mapa — minimiza sheet e centraliza na localização
@@ -663,12 +662,10 @@ function setSheetState(s){
   const expand=document.getElementById('mapExpand');
   const home=document.getElementById('btnHome');
 
-  expand.textContent=s==='min'?'⬆ Lista':s==='mid'?'⬆ Expandir':'⬇ Fechar';
+  expand.textContent=s==='min'?'⬆ Lista':s==='mid'?'⬆ Mais':'⬇ Mapa';
 
-  // Mostra botão home só quando sheet está expandido
-  if(localized){
-    home.style.display=s!=='min'?'flex':'none';
-  }
+  // Botão 🗺 aparece sempre que sheet não está minimizado
+  home.style.display = s!=='min' ? 'flex' : 'none';
 }
 
 // Drag gesture
@@ -947,7 +944,10 @@ function setTab(el,t){
     const e=document.getElementById('t'+id);
     if(e)e.style.display=id===t?(TAB_DISPLAY[id]||'block'):'none';
   });
-  if(sheetState==='min')setSheetState('mid');
+  // Abre em mid — nunca em open automaticamente
+  if(sheetState==='min') setSheetState('mid');
+  // Se já estava open, mantém mid para dar espaço ao mapa
+  if(sheetState==='open') setSheetState('mid');
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1248,9 +1248,10 @@ function runSplash(cb){
 
 runSplash(()=>{
   updateHeaderOffset();
+  setSheetState('min'); // começa sempre minimizado — mapa em foco
   renderManaus();
   renderSabias();
-  renderAgenda(); // busca do Supabase automaticamente
+  renderAgenda();
   loadWeather();
   loadLeaflet(()=>{/* aguarda localizar */});
 });

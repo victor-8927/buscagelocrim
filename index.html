@@ -12,27 +12,56 @@
 /* ── RESET ─────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
-  --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
-  --ice:#04489D;--ice2:#023371;
-  --amber:#D45000;--amber2:#AA3E00;
+  --bg:#040E1A;--surf:#071828;--card:#0C2236;--card2:#0F2D47;
+  --brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.16);
+  --ice:#5B88BF;--ice2:#3A6AA3;
+  --amber:#FF6B00;--amber2:#CC5200;
   --green:#00E676;--yellow:#FFD600;--red:#FF1744;
-  --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#35688A;
+  --txt1:#E8F6FF;--txt2:#5A95B8;--txt3:#254560;
   --fd:'Bebas Neue',sans-serif;
   --fb:'Inter',system-ui,sans-serif;
   --r:14px;--r2:20px;
-  --sh:0 8px 40px rgba(0,0,0,.15);
-  --gi:0 0 20px rgba(0,107,138,.2);
-  --ga:0 0 20px rgba(212,80,0,.25);
+  --sh:0 8px 40px rgba(0,0,0,.6);
+  --gi:0 0 20px rgba(91,136,191,.25);
+  --ga:0 0 20px rgba(255,107,0,.35);
   --blur:blur(20px) saturate(180%);
   --sheet-min:88px;   /* altura minimizada = só abas visíveis */
   --sheet-mid:38vh;   /* médio — mapa ainda bem visível */
   --tabbar-h:58px;    /* altura da tab bar fixa no rodapé */
   --sheet-max:88vh;   /* valor bruto — usado pelo parseFloat() no JS, que não resolve calc() em custom properties */
-  --sheet-real-max:calc(88vh - var(--tabbar-h)); /* altura efetiva do elemento, já descontando a tab bar — usada em todo CSS de height/transform */
+  --header-h:130px;  /* fallback — updateHeaderOffset() mede o valor real via JS */
+  --sheet-real-max:calc(100vh - var(--tabbar-h) - var(--header-h) - 12px); /* altura efetiva do elemento — desconta tab bar, header, e uma margem pequena de respiro, para o sheet aberto nunca ficar atrás do header (z-index maior) */
 }
-html,body{height:100%;overflow:hidden;background:var(--bg)}
-body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
+[data-theme=light]{
+  --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
+  --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
+  --ice:#04489D;--ice2:#023371;--amber:#D45000;--amber2:#AA3E00;
+  --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#35688A;
+}
+html,body{height:100%;overflow:hidden;background:#040E1A}
+[data-theme=light] body{background:#EBF5FF}
+body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
+
+/* Overrides do tema claro — componentes com cor hardcoded que não
+   seguem as variáveis automaticamente */
+[data-theme=light] #floating-header{background:rgba(235,245,255,.92);border-bottom:1px solid rgba(0,0,0,.1)}
+[data-theme=light] .clock-time{color:#040E1A}
+[data-theme=light] .clock-date{color:#3A6E8A}
+[data-theme=light] .clock-tz{color:#35688A}
+[data-theme=light] .clock-sec{color:#3A6E8A}
+[data-theme=light] .clock-sep{background:rgba(0,0,0,.15)}
+[data-theme=light] .sinput{color:#040E1A}
+[data-theme=light] .sinput::placeholder{color:#8AB5CC}
+[data-theme=light] .sfield{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.14)}
+[data-theme=light] .wpill{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
+[data-theme=light] .wcity{color:#3A6E8A}
+[data-theme=light] .ibtn{background:rgba(255,255,255,.9);border-color:rgba(0,0,0,.12)}
+[data-theme=light] .chip{background:rgba(255,255,255,.9);color:#3A6E8A}
+[data-theme=light] #sheet{background:rgba(255,255,255,.94)}
+[data-theme=light] #tabbar{background:rgba(255,255,255,.96);border-top:1px solid rgba(0,0,0,.1)}
+[data-theme=light] .sort-select{background:rgba(255,255,255,.9);color:#3A6E8A;border-color:rgba(0,0,0,.14)}
+[data-theme=light] .pcard,[data-theme=light] .mcard,[data-theme=light] .ecard,[data-theme=light] .alink{background:rgba(255,255,255,.7)}
+[data-theme=light] .sbody{background:rgba(228,243,255,.9)}
 
 /* ══════════════════════════════════════════════════════════
    SPLASH — tela de boas-vindas com logo oficial
@@ -104,15 +133,19 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
   :root{
     --sheet-mid:38dvh;
     --sheet-max:88dvh;
-    --sheet-real-max:calc(88dvh - var(--tabbar-h));
+    --sheet-real-max:calc(100dvh - var(--tabbar-h) - var(--header-h) - 12px);
   }
   #floating-header{padding:0 10px}
   .hdr-row1{gap:7px;padding:7px 0 5px}
   .h-logo{width:28px;height:28px}
   .h-brand h1{font-size:16px;letter-spacing:1px}
-  .hdr-greet{gap:7px;padding:3px 0 8px}
-  .greet-hello{font-size:17px}
-  .greet-sub{font-size:11px}
+  .ibtn{width:28px;height:28px;font-size:12px}
+  .hdr-row2{gap:7px;padding:3px 0 6px}
+  #clockCanvas{width:32px;height:32px}
+  .clock-time{font-size:16px}
+  .clock-sec{font-size:10px}
+  .clock-date{font-size:8px}
+  .clock-tz{font-size:7px}
   .wpill{padding:3px 7px}
   .wtemp{font-size:12px}
   .wcity{font-size:7px}
@@ -121,6 +154,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
   .sinput{font-size:12px}
   .loc-circle{width:38px;height:38px;font-size:15px}
   .chip{padding:3px 10px;font-size:10px}
+  .scard{width:170px} /* um pouco mais estreito em telas pequenas, mas ainda com largura fixa suficiente */
 }
 
 @media (max-width:360px){
@@ -172,6 +206,31 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 }
 .wtemp{font-size:14px;font-weight:800;color:var(--amber);line-height:1}
 .wcity{font-size:8px;color:var(--txt2)}
+.ibtn{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(12,34,54,.6);border:1px solid var(--brd2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;transition:.2s;flex-shrink:0;
+}
+.ibtn:active{transform:scale(.88)}
+
+/* Linha 2: relógio */
+.hdr-row2{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 0 8px;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+#clockCanvas{flex-shrink:0;border-radius:50%;box-shadow:0 0 0 2px rgba(180,140,20,.6)}
+.clock-sep{width:1px;height:28px;background:var(--brd2);flex-shrink:0}
+.clock-digital{flex:1}
+.clock-time{
+  font-family:var(--fd);font-size:20px;letter-spacing:2px;
+  color:var(--txt1);line-height:1;
+  display:flex;align-items:baseline;gap:4px;
+}
+.clock-sec{font-size:12px;font-weight:600;color:var(--txt2);letter-spacing:1px}
+.clock-date{font-size:9px;color:var(--txt2);margin-top:2px}
+.clock-tz{font-size:8px;color:var(--txt3);margin-top:1px}
 
 /* Linha 3: busca + chips (colapsável) */
 .hdr-row3{padding:0 0 8px;display:flex;flex-direction:column;gap:6px}
@@ -330,7 +389,9 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 
 /* conteúdo das abas */
 .awrap{flex:1;overflow-y:auto;padding:8px 12px 80px;min-height:0;display:flex;flex-direction:column;gap:8px}
-.swrap{flex:1;overflow-y:auto;padding:8px 12px 80px;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.swrap{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding:8px 12px 80px;scroll-snap-type:x mandatory}
+.swrap::-webkit-scrollbar{height:3px}
+.swrap::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
 .plist{flex:1;overflow-y:auto;padding:8px 12px 80px;display:flex;flex-direction:column;gap:7px;min-height:0}
 .mwrap{flex:1;overflow-y:auto;padding:10px 12px 80px;min-height:0}
 
@@ -401,7 +462,7 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
    SLIDER MANAUS
 ══════════════════════════════════════════════════════════ */
 .mwrap h3{font-family:var(--fd);font-size:20px;letter-spacing:1px;margin-bottom:10px}
-.mtrack{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.mtrack{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
 .mtrack::-webkit-scrollbar{height:3px}
 .mtrack::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
 .mcard{flex-shrink:0;width:180px;border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);scroll-snap-align:start;background:var(--card);transition:.2s}
@@ -415,8 +476,8 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 /* ══════════════════════════════════════════════════════════
    VOCÊ SABIA
 ══════════════════════════════════════════════════════════ */
-.scard{border-radius:var(--r);overflow:hidden;border:1px solid var(--brd)}
-.shero{padding:12px;display:flex;align-items:center;gap:8px;position:relative;min-height:64px}
+.scard{flex-shrink:0;width:200px;border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);scroll-snap-align:start}
+.shero{padding:12px;display:flex;align-items:center;gap:8px;position:relative;min-height:56px}
 .shero-bg{position:absolute;inset:0;z-index:0}
 .shero-c{position:relative;z-index:1;display:flex;align-items:center;gap:12px;width:100%}
 .shero-ico{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:16px}
@@ -437,7 +498,11 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
   text-decoration:none;transition:border-color .2s;flex-shrink:0;
 }
 .alink:hover{border-color:rgba(4,72,157,.3)}
+.atrack{display:flex;align-items:flex-start;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.atrack::-webkit-scrollbar{height:3px}
+.atrack::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
 .ecard{
+  flex-shrink:0;width:230px;scroll-snap-align:start;
   background:rgba(12,34,54,.7);border:1px solid var(--brd);
   border-radius:var(--r);overflow:hidden;cursor:pointer;transition:.2s;
 }
@@ -595,16 +660,25 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
     <div class="h-brand">
       <h1><span class="brand-light">busca</span>GELOCRIM</h1>
     </div>
-  </div>
-  <!-- Linha 2: saudação dinâmica + clima -->
-  <div class="hdr-greet">
-    <div class="greet-text">
-      <div class="greet-hello" id="greetHello">Boa tarde!</div>
-      <div class="greet-sub">Encontre a <b>refrescância</b> perto de você!</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <div class="wpill">
+        <span id="wIco">🌤</span>
+        <div><div class="wtemp" id="wTemp">–°</div><div class="wcity">Manaus</div></div>
+      </div>
+      <button class="ibtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
     </div>
-    <div class="wpill">
-      <span id="wIco">🌤</span>
-      <div><div class="wtemp" id="wTemp">–°</div><div class="wcity">Manaus, AM</div></div>
+  </div>
+  <!-- Linha 2: relógio -->
+  <div class="hdr-row2">
+    <canvas id="clockCanvas" width="40" height="40"></canvas>
+    <div class="clock-sep"></div>
+    <div class="clock-digital">
+      <div class="clock-time">
+        <span id="clockHM">--:--</span>
+        <span class="clock-sec" id="clockS">--</span>
+      </div>
+      <div class="clock-date" id="clockDate">–</div>
+      <div class="clock-tz">Manaus · Amazônia · UTC-4</div>
     </div>
   </div>
   <!-- Linha 3: busca -->
@@ -726,7 +800,7 @@ const SEG={
 
 let mapInst=null,tileL=null,markers=[],userM=null,radiusC=null;
 let curP=null,partners=[],userLat=null,userLng=null;
-let localized=false,radius=500;
+let localized=false,radius=500,isDark=true;
 
 /* ══════════════════════════════════════════════════════════
    HEADER HEIGHT — posiciona badges e sheet corretamente
@@ -739,7 +813,18 @@ function updateHeaderOffset(){
   if(badge)  badge.style.bottom=(sheetMin+10)+'px';
   if(expand) expand.style.bottom=(sheetMin+10)+'px';
   if(home)   home.style.bottom=(sheetMin+62)+'px';
+
+  // Mede a altura real do header (variável: relógio ocupa 2 linhas,
+  // tamanhos mudam por breakpoint) e limita a altura máxima do sheet
+  // para que ele nunca suba a ponto de ficar atrás do header —
+  // que tem z-index maior e esconderia o topo do sheet (título "PARCEIROS").
+  const header=document.getElementById('floating-header');
+  if(header){
+    const h=header.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--header-h',h+'px');
+  }
 }
+window.addEventListener('resize',updateHeaderOffset);
 
 // ── CONTROLES INTELIGENTES — aparecem ao toque, somem em 3s ──
 let ctrlTimer=null;
@@ -1356,7 +1441,7 @@ async function renderAgenda(){
         <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;flex-shrink:0"></span>
         ${events.length} eventos · Atualizado automaticamente todo dia às 8h
       </div>
-      ${cards}`;
+      <div class="atrack">${cards}</div>`;
 
   } catch(e) {
     // Fallback com eventos fixos se o banco falhar
@@ -1382,15 +1467,65 @@ function getManausTime(){
   return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Manaus'}));
 }
 
-function updateGreeting(){
-  const h=getManausTime().getHours();
-  const saudacao = h<12 ? 'Bom dia!' : h<18 ? 'Boa tarde!' : 'Boa noite!';
-  document.getElementById('greetHello').textContent=saudacao;
-}
+/* Saudação dinâmica removida — o relógio analógico voltou a ocupar
+   esse espaço no header, por decisão do usuário. getManausTime()
+   é mantida — usada pelo relógio abaixo. */
 
-/* Relógio analógico e alternância de tema foram removidos neste
-   redesign (mockup não os inclui). getManausTime() é mantida —
-   reaproveitada para a saudação dinâmica do header. */
+function drawClock(){
+  const canvas=document.getElementById('clockCanvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const t=getManausTime();
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=W/2-2;
+  ctx.clearRect(0,0,W,H);
+  const g=ctx.createRadialGradient(cx,cy,r-3,cx,cy,r+1);
+  g.addColorStop(0,'#B8860B');g.addColorStop(.4,'#F0C020');g.addColorStop(.7,'#9A7010');g.addColorStop(1,'#F0C020');
+  ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,r-3,0,2*Math.PI);ctx.fillStyle=isDark?'#F5F0E0':'#FAFAF5';ctx.fill();
+  for(let i=0;i<12;i++){
+    const a=(i/12)*2*Math.PI-Math.PI/2,isM=i%3===0;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*(r-(isM?9:7)),cy+Math.sin(a)*(r-(isM?9:7)));
+    ctx.lineTo(cx+Math.cos(a)*(r-(isM?4:5)),cy+Math.sin(a)*(r-(isM?4:5)));
+    ctx.strokeStyle='#141820';ctx.lineWidth=isM?2:1;ctx.lineCap='round';ctx.stroke();
+  }
+  const h=t.getHours()%12,m=t.getMinutes(),s=t.getSeconds();
+  const hA=((h+m/60)/12)*2*Math.PI-Math.PI/2;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(hA)*(r*.52),cy+Math.sin(hA)*(r*.52));
+  ctx.strokeStyle='#141820';ctx.lineWidth=3.5;ctx.lineCap='round';ctx.stroke();
+  const mA=(m/60)*2*Math.PI-Math.PI/2;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(mA)*(r*.75),cy+Math.sin(mA)*(r*.75));
+  ctx.strokeStyle='#141820';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
+  const sA=(s/60)*2*Math.PI-Math.PI/2;
+  ctx.beginPath();ctx.moveTo(cx-Math.cos(sA)*4,cy-Math.sin(sA)*4);
+  ctx.lineTo(cx+Math.cos(sA)*(r*.86),cy+Math.sin(sA)*(r*.86));
+  ctx.strokeStyle='#CC1A10';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,3,0,2*Math.PI);ctx.fillStyle='#141820';ctx.fill();
+  ctx.beginPath();ctx.arc(cx,cy,1.5,0,2*Math.PI);ctx.fillStyle='#CC1A10';ctx.fill();
+  const hh=String(h===0?12:h).padStart(2,'0'),mm=String(m).padStart(2,'0'),ss=String(s).padStart(2,'0');
+  document.getElementById('clockHM').textContent=`${hh}:${mm}`;
+  document.getElementById('clockS').textContent=ss;
+  document.getElementById('clockDate').textContent=`${DIAS[t.getDay()]}, ${t.getDate()} de ${MESES[t.getMonth()]} de ${t.getFullYear()}`;
+}
+drawClock();
+setInterval(drawClock,1000);
+
+/* ══════════════════════════════════════════════════════════
+   TEMA
+══════════════════════════════════════════════════════════ */
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'':'light');
+  document.getElementById('themeBtn').textContent=isDark?'🌙':'☀️';
+  if(mapInst&&tileL){
+    mapInst.removeLayer(tileL);
+    const u=isDark?'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                  :'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    tileL=L.tileLayer(u,{attribution:'© <a href="https://openstreetmap.org">OSM</a> © <a href="https://carto.com">CARTO</a>',maxZoom:19,subdomains:'abcd'}).addTo(mapInst);
+  }
+  const iceColor=getComputedStyle(document.documentElement).getPropertyValue('--ice').trim();
+  if(radiusC){radiusC.setStyle({color:iceColor,fillColor:iceColor})}
+}
 
 /* ══════════════════════════════════════════════════════════
    CLIMA
@@ -1445,7 +1580,6 @@ function runSplash(cb){
 runSplash(()=>{
   updateHeaderOffset();
   setSheetState('mid'); // GPS CTA precisa de espaço para aparecer inteiro, sem cortar
-  updateGreeting();
   renderManaus();
   renderSabias();
   renderAgenda();

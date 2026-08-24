@@ -9,10 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
+/* ── RESET ─────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#040E1A;--surf:#071828;--card:#0C2236;--card2:#0F2D47;
-  --brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.14);
+  --brd:rgba(255,255,255,.08);--brd2:rgba(255,255,255,.16);
   --ice:#00E5FF;--ice2:#00B8CC;
   --amber:#FF6B00;--amber2:#CC5200;
   --green:#00E676;--yellow:#FFD600;--red:#FF1744;
@@ -20,290 +21,366 @@
   --fd:'Bebas Neue',sans-serif;
   --fb:'Inter',system-ui,sans-serif;
   --r:14px;--r2:20px;
-  --sh:0 8px 40px rgba(0,0,0,.5);
-  --gi:0 0 20px rgba(0,229,255,.2);
-  --ga:0 0 20px rgba(255,107,0,.3);
+  --sh:0 8px 40px rgba(0,0,0,.6);
+  --gi:0 0 20px rgba(0,229,255,.25);
+  --ga:0 0 20px rgba(255,107,0,.35);
+  --blur:blur(20px) saturate(180%);
+  --sheet-min:88px;   /* altura minimizada = só abas visíveis */
+  --sheet-mid:52vh;
+  --sheet-max:92vh;
 }
 [data-theme=light]{
-  --bg:#EBF5FF;--surf:#FFF;--card:#F2F9FF;--card2:#E4F3FF;
+  --bg:#EBF5FF;--surf:rgba(255,255,255,.85);--card:rgba(240,248,255,.9);--card2:#E4F3FF;
   --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
   --ice:#006B8A;--ice2:#004F68;--amber:#D45000;--amber2:#AA3E00;
   --txt1:#040E1A;--txt2:#3A6E8A;--txt3:#8AB5CC;
 }
-html,body{height:100%;overflow:hidden;background:var(--bg)}
-body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;transition:background .3s,color .3s}
 
-/* ── SPLASH ─────────────────────────────────────────── */
-#splash{position:fixed;inset:0;z-index:9999;
+html,body{height:100%;overflow:hidden;background:#040E1A}
+body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
+
+/* ══════════════════════════════════════════════════════════
+   SPLASH
+══════════════════════════════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:9999;
   background:radial-gradient(ellipse at 30% 20%,#0A2A40 0%,#040E1A 65%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  transition:opacity .6s,transform .6s}
+  transition:opacity .6s,transform .6s;
+}
 #splash.out{opacity:0;transform:scale(1.04);pointer-events:none}
-.sp-logo{width:90px;height:90px;border-radius:50%;
+.sp-logo{
+  width:90px;height:90px;border-radius:50%;
   background:conic-gradient(from 135deg,#00E5FF,#0077AA,#00E5FF);
   display:flex;align-items:center;justify-content:center;font-size:42px;
   box-shadow:0 0 0 8px rgba(0,229,255,.07),0 0 60px rgba(0,229,255,.28);
-  animation:pop .8s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes pop{from{transform:scale(0) rotate(-90deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
-.sp-title{font-family:var(--fd);font-size:40px;letter-spacing:4px;color:#fff;
-  text-shadow:0 0 40px rgba(0,229,255,.4);animation:fd .6s .3s both}
-.sp-sub{font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.4px;animation:fd .6s .5s both}
-@keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.sp-bar{width:180px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;animation:fd .6s .6s both}
-.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--ice),var(--amber));border-radius:2px;transition:width .12s linear}
+  animation:pop .8s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes pop{from{transform:scale(0) rotate(-90deg);opacity:0}to{transform:scale(1);opacity:1}}
+.sp-title{font-family:var(--fd);font-size:40px;letter-spacing:4px;color:#fff;text-shadow:0 0 40px rgba(0,229,255,.4);animation:fdin .6s .3s both}
+.sp-sub{font-size:12px;color:rgba(255,255,255,.4);animation:fdin .6s .5s both}
+@keyframes fdin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sp-bar{width:180px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;animation:fdin .6s .6s both}
+.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--ice),var(--amber));transition:width .12s linear}
 
-/* ── LAYOUT — mobile-first, tela dividida em linhas ── */
-#app{
-  height:100vh;height:100dvh;
-  display:flex;flex-direction:column;
-  overflow:hidden;
+/* ══════════════════════════════════════════════════════════
+   MAPA FULLSCREEN — base de tudo
+══════════════════════════════════════════════════════════ */
+#map{
+  position:fixed;inset:0;z-index:0;
+  width:100%;height:100%;
 }
-/* Mapa ocupa o espaço restante entre busca e sheet */
-#map-wrap{flex:1;position:relative;min-height:0}
-#map{width:100%;height:100%}
-
-/* ── HEADER ──────────────────────────────────────────── */
-.hdr{flex-shrink:0;
-  background:linear-gradient(135deg,var(--surf),var(--card));
-  border-bottom:1px solid var(--brd);
-  padding:10px 14px;display:flex;align-items:center;gap:10px}
-.h-logo{width:36px;height:36px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--ice),var(--ice2));
-  display:flex;align-items:center;justify-content:center;font-size:18px;
-  box-shadow:var(--gi)}
-.h-brand{flex:1;min-width:0}
-.h-brand h1{font-family:var(--fd);font-size:20px;letter-spacing:2px;line-height:1}
-.h-brand p{font-size:9px;color:var(--txt2);margin-top:1px}
-.h-right{display:flex;gap:6px;align-items:center;flex-shrink:0}
-.wpill{display:flex;align-items:center;gap:5px;background:var(--card);
-  border:1px solid var(--brd2);border-radius:20px;padding:5px 10px}
-.wtemp{font-size:14px;font-weight:800;color:var(--amber);line-height:1}
-.wcity{font-size:8px;color:var(--txt2)}
-.ibtn{width:34px;height:34px;border-radius:50%;background:var(--card);
-  border:1px solid var(--brd2);display:flex;align-items:center;
-  justify-content:center;font-size:15px;cursor:pointer;transition:.2s}
-.ibtn:active{transform:scale(.88)}
-
-/* ── BARRA DO RELÓGIO ────────────────────────────────── */
-.clock-bar{
-  flex-shrink:0;
-  background:linear-gradient(135deg,var(--bg),var(--surf));
-  border-bottom:1px solid var(--brd);
-  padding:6px 14px;
-  display:flex;align-items:center;gap:12px;
-}
-/* Canvas do relógio analógico */
-#clockCanvas{
-  flex-shrink:0;
-  border-radius:50%;
-  box-shadow:0 0 0 2px rgba(180,140,20,.6),0 0 0 4px rgba(140,100,10,.3);
-}
-.clock-sep{
-  width:1px;height:32px;
-  background:var(--brd2);flex-shrink:0;
-}
-.clock-digital{flex:1}
-.clock-time{
-  font-family:var(--fd);
-  font-size:22px;letter-spacing:2px;
-  color:var(--txt1);line-height:1;
-  display:flex;align-items:baseline;gap:4px;
-}
-.clock-sec{
-  font-size:13px;font-weight:600;
-  color:var(--txt2);letter-spacing:1px;
-}
-.clock-date{
-  font-size:10px;color:var(--txt2);
-  margin-top:2px;letter-spacing:.3px;
-}
-.clock-tz{
-  font-size:9px;color:var(--txt3);
-  margin-top:1px;
-}
-
-/* ── SEARCH ─────────────────────────────────────────── */
-.sbar{flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--brd);padding:8px 12px}
-.srow{display:flex;gap:7px;margin-bottom:7px}
-.sfield{flex:1;display:flex;align-items:center;gap:7px;
-  background:var(--card);border:1px solid var(--brd2);
-  border-radius:var(--r);padding:9px 12px;transition:.2s}
-.sfield:focus-within{border-color:var(--ice);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
-.sico{font-size:14px;color:var(--txt3);flex-shrink:0}
-.sinput{flex:1;background:none;border:none;outline:none;
-  font-size:13px;font-family:var(--fb);color:var(--txt1)}
-.sinput::placeholder{color:var(--txt3)}
-.bloc{background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border:none;border-radius:var(--r);padding:9px 14px;
-  font-size:12px;font-weight:700;font-family:var(--fb);
-  color:#fff;cursor:pointer;flex-shrink:0;
-  box-shadow:var(--ga);transition:.15s;
-  display:flex;align-items:center;gap:5px}
-.bloc:active{transform:scale(.95)}
-.chips{display:flex;gap:6px;overflow-x:auto}
-.chips::-webkit-scrollbar{display:none}
-.chip{border:1px solid var(--brd2);border-radius:20px;padding:4px 14px;
-  font-size:11px;font-weight:600;color:var(--txt2);
-  cursor:pointer;white-space:nowrap;flex-shrink:0;
-  background:var(--card);transition:.2s}
-.chip.active{background:linear-gradient(135deg,var(--ice),var(--ice2));
-  border-color:transparent;color:#040E1A;font-weight:700;box-shadow:var(--gi)}
-
-/* ── MAPA placeholder ────────────────────────────────── */
-.map-ph{width:100%;height:100%;
+.map-ph{
+  position:fixed;inset:0;z-index:0;
   background:radial-gradient(ellipse at center,#081A2C 0%,#040E1A 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;color:var(--txt3);text-align:center;padding:20px}
+  gap:14px;color:var(--txt3);text-align:center;padding:20px;
+}
 .map-ph-ico{font-size:44px;animation:flt 3s ease-in-out infinite}
 @keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 .map-ph-title{font-family:var(--fd);font-size:22px;letter-spacing:2px;color:var(--txt2)}
 .map-ph-sub{font-size:12px;line-height:1.6;max-width:260px}
-.map-badge{position:absolute;bottom:10px;left:10px;z-index:10;display:none;
-  background:rgba(4,14,26,.9);border:1px solid rgba(0,229,255,.3);
+
+/* ══════════════════════════════════════════════════════════
+   HEADER FLUTUANTE — sobre o mapa, backdrop-blur
+══════════════════════════════════════════════════════════ */
+#floating-header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(4,14,26,.72);
+  -webkit-backdrop-filter:var(--blur);
+  backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--brd2);
+  padding:0 14px;
+}
+
+/* Linha 1: logo + brand + clima + toggle */
+.hdr-row1{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 0 6px;
+}
+.h-logo{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--ice),var(--ice2));
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+  box-shadow:var(--gi);
+}
+.h-brand{flex:1;min-width:0}
+.h-brand h1{font-family:var(--fd);font-size:18px;letter-spacing:2px;line-height:1}
+.h-brand p{font-size:8px;color:var(--txt2);margin-top:1px}
+.wpill{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(12,34,54,.6);border:1px solid var(--brd2);
+  border-radius:20px;padding:4px 9px;
+}
+.wtemp{font-size:14px;font-weight:800;color:var(--amber);line-height:1}
+.wcity{font-size:8px;color:var(--txt2)}
+.ibtn{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(12,34,54,.6);border:1px solid var(--brd2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;transition:.2s;flex-shrink:0;
+}
+.ibtn:active{transform:scale(.88)}
+
+/* Linha 2: relógio */
+.hdr-row2{
+  display:flex;align-items:center;gap:10px;
+  padding:4px 0 8px;
+  border-top:1px solid rgba(255,255,255,.05);
+}
+#clockCanvas{flex-shrink:0;border-radius:50%;box-shadow:0 0 0 2px rgba(180,140,20,.6)}
+.clock-sep{width:1px;height:28px;background:var(--brd2);flex-shrink:0}
+.clock-digital{flex:1}
+.clock-time{
+  font-family:var(--fd);font-size:20px;letter-spacing:2px;
+  color:var(--txt1);line-height:1;
+  display:flex;align-items:baseline;gap:4px;
+}
+.clock-sec{font-size:12px;font-weight:600;color:var(--txt2);letter-spacing:1px}
+.clock-date{font-size:9px;color:var(--txt2);margin-top:2px}
+.clock-tz{font-size:8px;color:var(--txt3);margin-top:1px}
+
+/* Linha 3: busca + chips (colapsável) */
+.hdr-row3{padding:0 0 8px;display:flex;flex-direction:column;gap:6px}
+.search-row{display:flex;gap:7px}
+.sfield{
+  flex:1;display:flex;align-items:center;gap:7px;
+  background:rgba(12,34,54,.7);border:1px solid var(--brd2);
+  border-radius:var(--r);padding:8px 12px;transition:.2s;
+}
+.sfield:focus-within{border-color:var(--ice);box-shadow:0 0 0 3px rgba(0,229,255,.1)}
+.sico{font-size:14px;color:var(--txt3);flex-shrink:0}
+.sinput{
+  flex:1;background:none;border:none;outline:none;
+  font-size:13px;font-family:var(--fb);color:var(--txt1);
+}
+.sinput::placeholder{color:var(--txt3)}
+.bloc{
+  background:linear-gradient(135deg,var(--amber),var(--amber2));
+  border:none;border-radius:var(--r);padding:8px 13px;
+  font-size:12px;font-weight:700;font-family:var(--fb);
+  color:#fff;cursor:pointer;flex-shrink:0;
+  box-shadow:var(--ga);transition:.15s;
+  display:flex;align-items:center;gap:5px;
+}
+.bloc:active{transform:scale(.95)}
+.chips{display:flex;gap:6px;overflow-x:auto}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  border:1px solid var(--brd2);border-radius:20px;padding:3px 13px;
+  font-size:11px;font-weight:600;color:var(--txt2);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+  background:rgba(12,34,54,.6);transition:.2s;
+}
+.chip.active{
+  background:linear-gradient(135deg,var(--ice),var(--ice2));
+  border-color:transparent;color:#040E1A;font-weight:700;
+  box-shadow:var(--gi);
+}
+
+/* ══════════════════════════════════════════════════════════
+   BADGES DO MAPA
+══════════════════════════════════════════════════════════ */
+.map-badge{
+  position:fixed;z-index:50;
+  left:12px;
+  background:rgba(4,14,26,.88);border:1px solid rgba(0,229,255,.3);
   border-radius:20px;padding:5px 12px;
   font-size:11px;font-weight:700;color:var(--ice);
-  backdrop-filter:blur(12px)}
-.map-toggle{position:absolute;bottom:10px;right:10px;z-index:10;
-  background:var(--surf);border:1px solid var(--brd2);
+  backdrop-filter:blur(10px);box-shadow:var(--sh);
+  display:none;
+  transition:bottom .4s cubic-bezier(.4,0,.2,1);
+}
+.map-expand{
+  position:fixed;right:12px;z-index:50;
+  background:rgba(4,14,26,.88);border:1px solid var(--brd2);
   border-radius:10px;padding:5px 11px;
   font-size:11px;font-weight:600;color:var(--txt2);
-  cursor:pointer;transition:.2s}
-.map-toggle:hover{color:var(--ice);border-color:rgba(0,229,255,.3)}
+  cursor:pointer;backdrop-filter:blur(10px);
+  transition:bottom .4s cubic-bezier(.4,0,.2,1), color .2s;
+}
+.map-expand:hover{color:var(--ice);border-color:rgba(0,229,255,.3)}
 
-/* ── SHEET ───────────────────────────────────────────── */
-.sheet{flex-shrink:0;background:var(--surf);
-  border-top:1px solid var(--brd);border-radius:var(--r2) var(--r2) 0 0;
-  height:46vh;display:flex;flex-direction:column;
-  overflow:hidden;transition:height .35s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 -4px 30px rgba(0,0,0,.3)}
-.sheet.exp{height:80vh}
-.drag{flex-shrink:0;padding:9px 0 4px;display:flex;justify-content:center;cursor:pointer}
-.dhandle{width:36px;height:4px;border-radius:2px;background:var(--brd2)}
-.shead{flex-shrink:0;padding:0 14px 8px;display:flex;align-items:center;justify-content:space-between}
-.stitle{font-family:var(--fd);font-size:20px;letter-spacing:1px}
-.scount{font-size:11px;color:var(--txt2)}
-.stabs{flex-shrink:0;display:flex;padding:0 14px;border-bottom:1px solid var(--brd);overflow-x:auto}
+/* ══════════════════════════════════════════════════════════
+   BOTTOM SHEET FLUTUANTE — gaveta deslizante
+══════════════════════════════════════════════════════════ */
+#sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:80;
+  background:rgba(7,24,40,.92);
+  -webkit-backdrop-filter:var(--blur);
+  backdrop-filter:var(--blur);
+  border:1px solid var(--brd2);
+  border-radius:22px 22px 0 0;
+  box-shadow:0 -8px 40px rgba(0,0,0,.5);
+  /* altura controlada por JS via transform */
+  height:var(--sheet-max);
+  transform:translateY(calc(var(--sheet-max) - var(--sheet-min)));
+  transition:transform .4s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  touch-action:none;
+}
+#sheet.mid{transform:translateY(calc(var(--sheet-max) - var(--sheet-mid)))}
+#sheet.open{transform:translateY(0)}
+
+/* drag handle */
+.drag{
+  flex-shrink:0;padding:10px 0 4px;
+  display:flex;justify-content:center;cursor:grab;
+  user-select:none;
+}
+.drag:active{cursor:grabbing}
+.dhandle{
+  width:40px;height:4px;border-radius:2px;
+  background:var(--brd2);transition:background .2s;
+}
+.drag:hover .dhandle{background:var(--txt3)}
+
+/* sheet header */
+.sheet-head{
+  flex-shrink:0;padding:0 14px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sheet-title{font-family:var(--fd);font-size:20px;letter-spacing:1px}
+.sheet-count{font-size:11px;color:var(--txt2)}
+
+/* tabs */
+.stabs{
+  flex-shrink:0;display:flex;padding:0 14px;
+  border-bottom:1px solid var(--brd);overflow-x:auto;
+}
 .stabs::-webkit-scrollbar{display:none}
-.stab{padding:7px 12px;font-size:11px;font-weight:700;color:var(--txt2);
-  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
-  flex-shrink:0;transition:.2s}
+.stab{
+  padding:7px 12px;font-size:11px;font-weight:700;
+  color:var(--txt2);cursor:pointer;border-bottom:2px solid transparent;
+  white-space:nowrap;flex-shrink:0;transition:.2s;
+}
 .stab.active{color:var(--amber);border-bottom-color:var(--amber)}
 
-/* ── TAB: PARCEIROS ──────────────────────────────────── */
-.plist{flex:1;overflow-y:auto;padding:8px 12px 24px;
-  display:flex;flex-direction:column;gap:7px;min-height:0}
+/* conteúdo das abas */
+.plist{
+  flex:1;overflow-y:auto;padding:8px 12px 24px;
+  display:flex;flex-direction:column;gap:7px;min-height:0;
+}
 .plist::-webkit-scrollbar{width:3px}
 .plist::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
+.mwrap{flex:1;overflow-y:auto;padding:10px 12px 24px;min-height:0}
+.swrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;display:flex;flex-direction:column;gap:10px}
+.awrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;display:flex;flex-direction:column;gap:8px}
 
-/* CTA quando sem GPS */
-.gps-cta{display:flex;flex-direction:column;align-items:center;
-  text-align:center;padding:24px 20px;gap:12px}
-.gps-ico{width:70px;height:70px;border-radius:50%;
+/* ══════════════════════════════════════════════════════════
+   GPS CTA
+══════════════════════════════════════════════════════════ */
+.gps-cta{
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;padding:24px 20px;gap:12px;
+}
+.gps-ico{
+  width:70px;height:70px;border-radius:50%;
   background:linear-gradient(135deg,var(--amber),var(--amber2));
   display:flex;align-items:center;justify-content:center;font-size:30px;
-  box-shadow:var(--ga);animation:glow-pulse 2s ease-in-out infinite}
-@keyframes glow-pulse{
+  box-shadow:var(--ga);animation:gp 2s ease-in-out infinite;
+}
+@keyframes gp{
   0%,100%{box-shadow:0 0 0 0 rgba(255,107,0,.4),var(--ga)}
-  50%{box-shadow:0 0 0 14px rgba(255,107,0,.0),var(--ga)}}
+  50%{box-shadow:0 0 0 14px rgba(255,107,0,.0),var(--ga)}
+}
 .gps-title{font-family:var(--fd);font-size:22px;letter-spacing:1px}
 .gps-sub{font-size:12px;color:var(--txt2);line-height:1.6;max-width:250px}
-.btn-gps{background:linear-gradient(135deg,var(--amber),var(--amber2));
+.btn-gps{
+  background:linear-gradient(135deg,var(--amber),var(--amber2));
   border:none;border-radius:var(--r);padding:13px 32px;
   font-size:13px;font-weight:700;font-family:var(--fb);
-  color:#fff;cursor:pointer;box-shadow:var(--ga);transition:.15s}
-.btn-gps:active{transform:scale(.96)}
+  color:#fff;cursor:pointer;box-shadow:var(--ga);
+}
 
-/* card parceiro */
-.pcard{background:var(--card);border:1px solid var(--brd);
-  border-radius:var(--r);padding:12px;
+/* ══════════════════════════════════════════════════════════
+   CARDS PARCEIROS
+══════════════════════════════════════════════════════════ */
+.pcard{
+  background:rgba(12,34,54,.8);border:1px solid var(--brd);
+  border-radius:var(--r);padding:11px;
   display:flex;align-items:center;gap:10px;
-  cursor:pointer;transition:border-color .2s;position:relative;overflow:hidden}
-.pcard::after{content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(0,229,255,.04),transparent);
-  opacity:0;transition:.2s}
-.pcard:hover{border-color:rgba(0,229,255,.22)}
-.pcard:hover::after{opacity:1}
-.pcard:active{transform:scale(.99)}
-.pcard.sel{border-color:var(--ice);
-  box-shadow:0 0 0 1px rgba(0,229,255,.12),0 4px 20px rgba(0,229,255,.06)}
-.pico{width:46px;height:46px;border-radius:13px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:20px;
-  border:1px solid rgba(255,255,255,.08)}
+  cursor:pointer;transition:border-color .2s;
+}
+.pcard:hover{border-color:rgba(0,229,255,.25)}
+.pcard.sel{border-color:var(--ice);box-shadow:0 0 0 1px rgba(0,229,255,.12)}
+.pico{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;border:1px solid rgba(255,255,255,.08);
+}
 .pbody{flex:1;min-width:0}
 .pname{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 .pmeta{font-size:10px;color:var(--txt2);margin-bottom:5px}
 .pbadges{display:flex;gap:4px;flex-wrap:wrap}
-.badge{display:inline-flex;align-items:center;gap:2px;
-  border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:2px;border-radius:20px;padding:2px 7px;font-size:9px;font-weight:700}
 .b-ok{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.25);color:var(--green)}
 .b-ice{background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);color:var(--ice)}
 .b-seg{border:1px solid}
-.brota{background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border:none;border-radius:20px;padding:7px 13px;
+.brota{
+  background:linear-gradient(135deg,var(--amber),var(--amber2));
+  border:none;border-radius:20px;padding:6px 12px;
   font-size:10px;font-weight:700;font-family:var(--fb);
   color:#fff;cursor:pointer;flex-shrink:0;
-  box-shadow:0 2px 10px rgba(255,107,0,.25);transition:.15s}
-.brota:active{transform:scale(.93)}
-.empty{text-align:center;padding:32px 20px;color:var(--txt2);
-  display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px}
+  box-shadow:0 2px 10px rgba(255,107,0,.25);
+}
+.empty{
+  text-align:center;padding:32px 16px;color:var(--txt2);
+  display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;
+}
 .empty-ico{font-size:36px;opacity:.4}
 
-/* ── TAB: MANAUS — SLIDER COM FOTOS REAIS ─────────────── */
-.mwrap{flex:1;overflow-y:auto;padding:10px 12px 24px;min-height:0}
+/* ══════════════════════════════════════════════════════════
+   SLIDER MANAUS
+══════════════════════════════════════════════════════════ */
 .mwrap h3{font-family:var(--fd);font-size:20px;letter-spacing:1px;margin-bottom:10px}
-.mtrack{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;
-  scroll-snap-type:x mandatory}
+.mtrack{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
 .mtrack::-webkit-scrollbar{height:3px}
 .mtrack::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
-.mcard{flex-shrink:0;width:220px;border-radius:var(--r);overflow:hidden;
-  border:1px solid var(--brd);cursor:pointer;transition:.2s;
-  scroll-snap-align:start;background:var(--card)}
-.mcard:hover{transform:scale(1.02);border-color:rgba(255,255,255,.2)}
-.mimg{width:100%;height:140px;object-fit:cover;display:block;background:var(--card2)}
+.mcard{flex-shrink:0;width:210px;border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);scroll-snap-align:start;background:var(--card);transition:.2s}
+.mcard:hover{transform:scale(1.02)}
+.mimg{width:100%;height:130px;object-fit:cover;display:block;background:var(--card2)}
 .mbody{padding:9px 10px 11px}
 .mtag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
-.mname{font-size:13px;font-weight:700;margin-bottom:2px;line-height:1.25}
+.mname{font-size:12px;font-weight:700;margin-bottom:2px;line-height:1.3}
 .msub{font-size:10px;color:var(--txt2);line-height:1.4}
 
-/* ── TAB: VOCÊ SABIA — cards expansíveis ─────────────── */
-.swrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;
-  display:flex;flex-direction:column;gap:10px}
-.scard{border-radius:var(--r);overflow:hidden;border:1px solid var(--brd);cursor:pointer}
-.scard:hover .shero{filter:brightness(1.08)}
-.shero{padding:16px;display:flex;align-items:center;gap:14px;position:relative;transition:.2s}
+/* ══════════════════════════════════════════════════════════
+   VOCÊ SABIA
+══════════════════════════════════════════════════════════ */
+.scard{border-radius:var(--r);overflow:hidden;border:1px solid var(--brd)}
+.shero{padding:16px;display:flex;align-items:center;gap:14px;position:relative}
 .shero-bg{position:absolute;inset:0;z-index:0}
-.shero-content{position:relative;z-index:1;display:flex;align-items:center;gap:14px;width:100%}
-.shero-ico{width:52px;height:52px;border-radius:14px;flex-shrink:0;
-  background:rgba(255,255,255,.15);
-  display:flex;align-items:center;justify-content:center;font-size:24px}
+.shero-c{position:relative;z-index:1;display:flex;align-items:center;gap:14px;width:100%}
+.shero-ico{width:52px;height:52px;border-radius:14px;flex-shrink:0;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:24px}
 .shero-text{flex:1}
-.shero-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
-  color:rgba(255,255,255,.65);margin-bottom:3px}
+.shero-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.65);margin-bottom:3px}
 .shero-title{font-size:15px;font-weight:800;color:#fff;line-height:1.25}
-.shero-num{font-family:var(--fd);font-size:48px;letter-spacing:-1px;
-  color:rgba(255,255,255,.12);line-height:1;flex-shrink:0}
-.sbody{padding:12px 14px;background:var(--card2)}
+.shero-num{font-family:var(--fd);font-size:48px;letter-spacing:-1px;color:rgba(255,255,255,.12);line-height:1;flex-shrink:0}
+.sbody{padding:12px 14px;background:rgba(12,34,54,.8)}
 .stxt{font-size:12px;color:var(--txt2);line-height:1.65;margin-bottom:6px}
 .sstat{font-size:13px;font-weight:700;color:var(--ice)}
 
-/* ── TAB: AGENDA ─────────────────────────────────────── */
-.awrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;
-  display:flex;flex-direction:column;gap:8px}
-.alink{display:flex;align-items:center;gap:8px;background:var(--card);
+/* ══════════════════════════════════════════════════════════
+   AGENDA
+══════════════════════════════════════════════════════════ */
+.alink{
+  display:flex;align-items:center;gap:8px;background:rgba(12,34,54,.7);
   border:1px solid var(--brd);border-radius:var(--r);padding:10px 14px;
   font-size:11px;color:var(--ice);font-weight:600;cursor:pointer;
-  text-decoration:none;transition:border-color .2s;flex-shrink:0}
+  text-decoration:none;transition:border-color .2s;flex-shrink:0;
+}
 .alink:hover{border-color:rgba(0,229,255,.3)}
-.ecard{background:var(--card);border:1px solid var(--brd);
-  border-radius:var(--r);overflow:hidden;cursor:pointer;
-  transition:border-color .2s,transform .15s}
+.ecard{
+  background:rgba(12,34,54,.7);border:1px solid var(--brd);
+  border-radius:var(--r);overflow:hidden;cursor:pointer;transition:.2s;
+}
 .ecard:hover{border-color:rgba(255,214,0,.3);transform:translateY(-1px)}
 .etop{display:flex;gap:12px;align-items:flex-start;padding:12px}
-.edate{background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border-radius:10px;padding:7px 10px;text-align:center;flex-shrink:0;min-width:48px}
+.edate{background:linear-gradient(135deg,var(--amber),var(--amber2));border-radius:10px;padding:7px 10px;text-align:center;flex-shrink:0;min-width:48px}
 .edia{font-family:var(--fd);font-size:26px;color:#fff;line-height:1}
-.emes{font-size:9px;color:rgba(255,255,255,.8);font-weight:700;
-  text-transform:uppercase;letter-spacing:.05em}
+.emes{font-size:9px;color:rgba(255,255,255,.8);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .einfo strong{font-size:13px;font-weight:700;display:block;margin-bottom:3px}
 .einfo span{font-size:11px;color:var(--txt2);line-height:1.5}
 .echips{display:flex;gap:5px;flex-wrap:wrap;padding:0 12px 10px}
@@ -313,88 +390,77 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
 .ec-f{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);color:var(--green)}
 .ec-p{background:rgba(255,214,0,.08);border:1px solid rgba(255,214,0,.2);color:var(--yellow)}
 
-/* ── DETAIL OVERLAY ─────────────────────────────────── */
-.overlay{display:none;position:fixed;inset:0;z-index:200;
-  background:rgba(4,14,26,.8);backdrop-filter:blur(12px);align-items:flex-end}
+/* ══════════════════════════════════════════════════════════
+   DETAIL OVERLAY
+══════════════════════════════════════════════════════════ */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(4,14,26,.8);backdrop-filter:blur(12px);align-items:flex-end}
 .overlay.open{display:flex}
-.detail{width:100%;max-width:560px;margin:0 auto;background:var(--surf);
-  border:1px solid var(--brd);border-radius:var(--r2) var(--r2) 0 0;
-  max-height:92vh;overflow-y:auto;animation:su .35s cubic-bezier(.34,1.2,.64,1)}
+.detail{
+  width:100%;max-width:560px;margin:0 auto;
+  background:rgba(7,24,40,.95);border:1px solid var(--brd2);
+  border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto;
+  animation:su .35s cubic-bezier(.34,1.2,.64,1);
+}
 @keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .ddrag{text-align:center;padding:10px 0 0}
-.dhandle{width:36px;height:4px;border-radius:2px;background:var(--brd2);display:inline-block}
-.dhero{height:160px;margin:12px 14px 0;border-radius:var(--r);
-  display:flex;align-items:center;justify-content:center;font-size:68px;
-  position:relative;background:var(--card);border:1px solid var(--brd)}
-.dclose{position:absolute;top:10px;right:10px;width:28px;height:28px;
-  border-radius:50%;background:var(--bg);border:1px solid var(--brd2);
-  font-size:12px;cursor:pointer;color:var(--txt2);
-  display:flex;align-items:center;justify-content:center;transition:.2s}
+.dhandle-line{width:36px;height:4px;border-radius:2px;background:var(--brd2);display:inline-block}
+.dhero{height:140px;margin:12px 14px 0;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:62px;position:relative;background:var(--card);border:1px solid var(--brd)}
+.dclose{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:var(--bg);border:1px solid var(--brd2);font-size:12px;cursor:pointer;color:var(--txt2);display:flex;align-items:center;justify-content:center}
 .dbody{padding:14px 16px 36px}
 .dname{font-family:var(--fd);font-size:24px;letter-spacing:1px;margin-bottom:2px}
 .dsub{font-size:11px;color:var(--txt2);margin-bottom:12px}
 .drows{margin-bottom:16px}
-.drow{display:flex;align-items:flex-start;gap:10px;
-  padding:9px 0;border-bottom:1px solid var(--brd)}
+.drow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--brd)}
 .drow:last-child{border:none}
 .dico{font-size:15px;width:20px;text-align:center;flex-shrink:0;margin-top:1px}
 .dlbl{font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:1px}
 .dval{font-size:13px;font-weight:500}
 .dacts{display:flex;gap:8px}
-.drota{flex:1;background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border:none;border-radius:var(--r);padding:14px;
-  font-size:14px;font-weight:800;font-family:var(--fb);color:#fff;
-  cursor:pointer;box-shadow:var(--ga);transition:.15s}
-.drota:active{transform:scale(.98)}
-.dwpp{width:52px;height:52px;background:var(--card);border:1px solid var(--brd2);
-  border-radius:var(--r);font-size:22px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:.2s}
-.dwpp:hover{border-color:rgba(0,229,255,.3)}
+.drota{flex:1;background:linear-gradient(135deg,var(--amber),var(--amber2));border:none;border-radius:var(--r);padding:14px;font-size:14px;font-weight:800;font-family:var(--fb);color:#fff;cursor:pointer;box-shadow:var(--ga)}
+.dwpp{width:52px;height:52px;background:var(--card);border:1px solid var(--brd2);border-radius:var(--r);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-/* ── TOAST ─────────────────────────────────────────── */
-.toast{position:fixed;top:14px;left:12px;right:12px;z-index:500;
-  background:var(--surf);border:1px solid var(--ice);border-radius:var(--r);
+/* ══════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════ */
+.toast{
+  position:fixed;top:14px;left:12px;right:12px;z-index:500;
+  background:rgba(7,24,40,.95);border:1px solid var(--ice);border-radius:var(--r);
   padding:11px 12px;display:flex;align-items:center;gap:9px;
   box-shadow:var(--sh),var(--gi);
   transform:translateY(-130px);opacity:0;
-  transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+  transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+}
 .toast.show{transform:translateY(0);opacity:1}
-.tico{width:32px;height:32px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--ice),var(--ice2));
-  display:flex;align-items:center;justify-content:center;font-size:14px}
+.tico{width:32px;height:32px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--ice),var(--ice2));display:flex;align-items:center;justify-content:center;font-size:14px}
 .ttxt strong{font-size:12px;display:block}
 .ttxt span{font-size:10px;color:var(--txt2)}
 .tx{margin-left:auto;background:none;border:none;color:var(--txt3);cursor:pointer;font-size:14px}
 
-/* ── LEAFLET OVERRIDES ─────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   LEAFLET OVERRIDES
+══════════════════════════════════════════════════════════ */
 .leaflet-container{background:#071828!important}
 .leaflet-control-zoom{border:1px solid var(--brd2)!important;box-shadow:none!important}
-.leaflet-control-zoom a{background:var(--surf)!important;color:var(--txt1)!important;border-color:var(--brd2)!important;font-size:16px!important}
+.leaflet-control-zoom a{background:rgba(7,24,40,.9)!important;color:var(--txt1)!important;border-color:var(--brd2)!important;font-size:16px!important}
 .leaflet-control-zoom a:hover{background:var(--card)!important;color:var(--ice)!important}
-.leaflet-control-attribution{background:rgba(4,14,26,.8)!important;color:var(--txt3)!important;font-size:9px!important}
+.leaflet-control-attribution{background:rgba(4,14,26,.7)!important;color:var(--txt3)!important;font-size:9px!important}
 .leaflet-control-attribution a{color:var(--txt2)!important}
-.leaflet-popup-content-wrapper{background:var(--surf)!important;color:var(--txt1)!important;
-  border:1px solid rgba(0,229,255,.2)!important;border-radius:14px!important;
-  box-shadow:var(--sh)!important;padding:0!important}
+.leaflet-popup-content-wrapper{background:rgba(7,24,40,.95)!important;color:var(--txt1)!important;border:1px solid rgba(0,229,255,.2)!important;border-radius:14px!important;box-shadow:var(--sh)!important;padding:0!important}
 .leaflet-popup-content{margin:0!important;padding:12px 14px!important;min-width:180px}
-.leaflet-popup-tip{background:var(--surf)!important}
+.leaflet-popup-tip{background:rgba(7,24,40,.95)!important}
 .leaflet-popup-close-button{color:var(--txt2)!important;font-size:16px!important;padding:8px!important}
 .lp-name{font-size:13px;font-weight:700;margin-bottom:3px}
 .lp-meta{font-size:10px;color:var(--txt2);margin-bottom:8px}
-.lp-btn{display:block;width:100%;background:linear-gradient(135deg,var(--amber),var(--amber2));
-  border:none;border-radius:10px;padding:8px;
-  font-size:11px;font-weight:700;font-family:var(--fb);color:#fff;cursor:pointer;text-align:center}
-.u-pin{width:20px;height:20px;border-radius:50%;background:var(--amber);border:3px solid #fff;
-  box-shadow:0 0 0 6px rgba(255,107,0,.15),var(--ga);animation:up 2s ease-in-out infinite}
-@keyframes up{0%,100%{box-shadow:0 0 0 6px rgba(255,107,0,.15),var(--ga)}
-  50%{box-shadow:0 0 0 14px rgba(255,107,0,.0),var(--ga)}}
-.spin{display:inline-block;width:13px;height:13px;border-radius:50%;
-  border:2px solid rgba(255,255,255,.2);border-top-color:#fff;animation:rot .7s linear infinite}
+.lp-btn{display:block;width:100%;background:linear-gradient(135deg,var(--amber),var(--amber2));border:none;border-radius:10px;padding:8px;font-size:11px;font-weight:700;font-family:var(--fb);color:#fff;cursor:pointer;text-align:center}
+.u-pin{width:20px;height:20px;border-radius:50%;background:var(--amber);border:3px solid #fff;box-shadow:0 0 0 6px rgba(255,107,0,.15),var(--ga);animation:up 2s ease-in-out infinite}
+@keyframes up{0%,100%{box-shadow:0 0 0 6px rgba(255,107,0,.15),var(--ga)}50%{box-shadow:0 0 0 14px rgba(255,107,0,.0),var(--ga)}}
+.spin{display:inline-block;width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;animation:rot .7s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
+<!-- SPLASH -->
 <div id="splash">
   <div class="sp-logo">🧊</div>
   <div class="sp-title">BUSCA GELOCRIM</div>
@@ -402,15 +468,17 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
   <div class="sp-bar"><div class="sp-fill" id="spFill"></div></div>
 </div>
 
+<!-- TOAST -->
 <div class="toast" id="toast">
   <div class="tico">🧊</div>
   <div class="ttxt"><strong id="tT">–</strong><span id="tS">–</span></div>
   <button class="tx" onclick="closeToast()">✕</button>
 </div>
 
+<!-- DETAIL -->
 <div class="overlay" id="overlay">
   <div class="detail">
-    <div class="ddrag"><div class="dhandle"></div></div>
+    <div class="ddrag"><div class="dhandle-line"></div></div>
     <div class="dhero" id="dHero">
       <button class="dclose" onclick="closeDetail()">✕</button>
       <span id="dEmoji">🏪</span>
@@ -418,36 +486,49 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
     <div class="dbody">
       <div id="dBadges" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px"></div>
       <div class="dname" id="dName">–</div>
-      <div class="dsub"  id="dSub">–</div>
+      <div class="dsub" id="dSub">–</div>
       <div class="drows" id="dRows"></div>
       <div class="dacts">
         <button class="drota" onclick="openRoute()">🗺 Abrir rota</button>
-        <button class="dwpp"  onclick="openWpp()">💬</button>
+        <button class="dwpp" onclick="openWpp()">💬</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="app">
+<!-- MAPA FULLSCREEN (fundo fixo) -->
+<div class="map-ph" id="mapPh">
+  <div class="map-ph-ico">📍</div>
+  <div class="map-ph-title">LOCALIZAR</div>
+  <div class="map-ph-sub">Toque em "Localizar" para ver os pontos GeloCrim mais próximos</div>
+  <button class="btn-gps" onclick="handleLocate()" style="margin-top:8px">📍 Ativar localização</button>
+</div>
+<div id="map"></div>
 
-  <header class="hdr">
+<!-- BADGES FLUTUANTES -->
+<div class="map-badge" id="mapBadge">⚡ <span id="mapCnt">0</span> pontos</div>
+<button class="map-expand" id="mapExpand" onclick="cycleSheet()">⬆ Lista</button>
+
+<!-- HEADER FLUTUANTE -->
+<div id="floating-header">
+  <!-- Linha 1: logo + clima + toggle -->
+  <div class="hdr-row1">
     <div class="h-logo">🧊</div>
     <div class="h-brand">
       <h1>BUSCA GELOCRIM</h1>
       <p>Amazon Indústria de Gelo · Manaus, AM</p>
     </div>
-    <div class="h-right">
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
       <div class="wpill">
         <span id="wIco">🌤</span>
         <div><div class="wtemp" id="wTemp">–°</div><div class="wcity">Manaus</div></div>
       </div>
       <button class="ibtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
     </div>
-  </header>
-
-  <!-- BARRA DO RELÓGIO — inspirado no relógio da Praça da Matriz de Manaus -->
-  <div class="clock-bar">
-    <canvas id="clockCanvas" width="44" height="44"></canvas>
+  </div>
+  <!-- Linha 2: relógio -->
+  <div class="hdr-row2">
+    <canvas id="clockCanvas" width="40" height="40"></canvas>
     <div class="clock-sep"></div>
     <div class="clock-digital">
       <div class="clock-time">
@@ -458,9 +539,9 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
       <div class="clock-tz">Manaus · Amazônia · UTC-4</div>
     </div>
   </div>
-
-  <div class="sbar">
-    <div class="srow">
+  <!-- Linha 3: busca -->
+  <div class="hdr-row3">
+    <div class="search-row">
       <div class="sfield">
         <span class="sico">🔍</span>
         <input class="sinput" id="sInput" type="text"
@@ -477,49 +558,34 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased;
       <div class="chip"        onclick="setRadius(this,3000)">3km</div>
     </div>
   </div>
+</div>
 
-  <div id="map-wrap">
-    <div class="map-ph" id="mapPh">
-      <div class="map-ph-ico">📍</div>
-      <div class="map-ph-title">LOCALIZAR</div>
-      <div class="map-ph-sub" id="mapPhSub">
-        Toque em "Localizar" para ver os pontos GeloCrim mais próximos de você
-      </div>
-      <button class="btn-gps" onclick="handleLocate()" style="margin-top:8px">
-        📍 Ativar minha localização
-      </button>
-    </div>
-    <div id="map" style="display:none;width:100%;height:100%"></div>
-    <div class="map-badge" id="mapBadge">⚡ <span id="mapCnt">0</span> pontos</div>
-    <button class="map-toggle" onclick="toggleSheet()">⬆ Lista</button>
+<!-- BOTTOM SHEET FLUTUANTE -->
+<div id="sheet">
+  <div class="drag" id="dragHandle">
+    <div class="dhandle"></div>
   </div>
-
-  <div class="sheet" id="sheet">
-    <div class="drag" onclick="toggleSheet()"><div class="dhandle"></div></div>
-    <div class="shead">
-      <span class="stitle" id="shTitle">PARCEIROS</span>
-      <span class="scount" id="shCount"></span>
-    </div>
-    <div class="stabs">
-      <div class="stab active" onclick="setTab(this,'p')">🏪 Perto de mim</div>
-      <div class="stab"        onclick="setTab(this,'m')">📸 Manaus</div>
-      <div class="stab"        onclick="setTab(this,'s')">💡 Você sabia?</div>
-      <div class="stab"        onclick="setTab(this,'a')">🎉 Agenda</div>
-    </div>
-
-    <div class="plist" id="tp">
-      <div class="gps-cta">
-        <div class="gps-ico">📍</div>
-        <div class="gps-title">ATIVE SUA LOCALIZAÇÃO</div>
-        <div class="gps-sub">Veja apenas os pontos GeloCrim dentro do seu raio — sem expor a base completa.</div>
-        <button class="btn-gps" onclick="handleLocate()">📍 Localizar agora</button>
-      </div>
-    </div>
-    <div class="mwrap" id="tm" style="display:none"></div>
-    <div class="swrap" id="ts" style="display:none"></div>
-    <div class="awrap" id="ta" style="display:none"></div>
+  <div class="sheet-head">
+    <span class="sheet-title" id="shTitle">PARCEIROS</span>
+    <span class="sheet-count" id="shCount"></span>
   </div>
-
+  <div class="stabs">
+    <div class="stab active" onclick="setTab(this,'p')">🏪 Perto de mim</div>
+    <div class="stab"        onclick="setTab(this,'m')">📸 Manaus</div>
+    <div class="stab"        onclick="setTab(this,'s')">💡 Você sabia?</div>
+    <div class="stab"        onclick="setTab(this,'a')">🎉 Agenda</div>
+  </div>
+  <div class="plist" id="tp">
+    <div class="gps-cta">
+      <div class="gps-ico">📍</div>
+      <div class="gps-title">ATIVE SUA LOCALIZAÇÃO</div>
+      <div class="gps-sub">Veja apenas os pontos GeloCrim dentro do seu raio.</div>
+      <button class="btn-gps" onclick="handleLocate()">📍 Localizar agora</button>
+    </div>
+  </div>
+  <div class="mwrap" id="tm" style="display:none"></div>
+  <div class="swrap" id="ts" style="display:none"></div>
+  <div class="awrap" id="ta" style="display:none"></div>
 </div>
 
 <script>
@@ -542,7 +608,82 @@ let mapInst=null,tileL=null,markers=[],userM=null,radiusC=null;
 let curP=null,partners=[],userLat=null,userLng=null;
 let localized=false,radius=500,isDark=true;
 
-/* ── SUPABASE — PostGIS: só retorna parceiros no raio ── */
+/* ══════════════════════════════════════════════════════════
+   HEADER HEIGHT — posiciona badges e sheet corretamente
+══════════════════════════════════════════════════════════ */
+function updateHeaderOffset(){
+  const h=document.getElementById('floating-header').offsetHeight;
+  const sh=document.getElementById('sheet');
+  const badge=document.getElementById('mapBadge');
+  const expand=document.getElementById('mapExpand');
+  // Sheet fica abaixo do header visualmente nunca ocultando o mapa todo
+  // Os badges ficam acima do sheet
+  const sheetMin=88; // px — altura mínima do sheet
+  badge.style.bottom=(sheetMin+10)+'px';
+  expand.style.bottom=(sheetMin+10)+'px';
+}
+
+/* ══════════════════════════════════════════════════════════
+   BOTTOM SHEET — drag e ciclo de estados
+══════════════════════════════════════════════════════════ */
+let sheetState='min'; // min | mid | open
+const sheet=document.getElementById('sheet');
+
+function cycleSheet(){
+  if(sheetState==='min'){setSheetState('mid')}
+  else if(sheetState==='mid'){setSheetState('open')}
+  else{setSheetState('min')}
+}
+
+function setSheetState(s){
+  sheetState=s;
+  sheet.classList.remove('mid','open');
+  if(s==='mid') sheet.classList.add('mid');
+  if(s==='open') sheet.classList.add('open');
+  const expand=document.getElementById('mapExpand');
+  expand.textContent=s==='min'?'⬆ Lista':s==='mid'?'⬆ Expandir':'⬇ Fechar';
+}
+
+// Drag gesture
+let dragStartY=0,dragStartTransform=0;
+const dragHandle=document.getElementById('dragHandle');
+
+function getDragOffset(){
+  const max=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sheet-max'));
+  const mid=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sheet-mid'));
+  const min=88;
+  if(sheetState==='min')  return max-min;
+  if(sheetState==='mid')  return max-window.innerHeight*0.52;
+  return 0;
+}
+
+dragHandle.addEventListener('touchstart',e=>{
+  dragStartY=e.touches[0].clientY;
+  dragStartTransform=getDragOffset();
+  sheet.style.transition='none';
+},{passive:true});
+
+dragHandle.addEventListener('touchmove',e=>{
+  const dy=e.touches[0].clientY-dragStartY;
+  const max=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sheet-max'));
+  const newT=Math.max(0,Math.min(max-88,dragStartTransform+dy));
+  sheet.style.transform=`translateY(${newT}px)`;
+},{passive:true});
+
+dragHandle.addEventListener('touchend',e=>{
+  sheet.style.transition='';
+  const max=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sheet-max'));
+  const current=parseFloat(sheet.style.transform.replace('translateY(','').replace('px)',''))||getDragOffset();
+  const pct=current/max;
+  if(pct<0.25)      setSheetState('open');
+  else if(pct<0.65) setSheetState('mid');
+  else              setSheetState('min');
+  sheet.style.transform='';
+});
+
+/* ══════════════════════════════════════════════════════════
+   SUPABASE — PostGIS nearby_partners
+══════════════════════════════════════════════════════════ */
 async function fetchNearby(lat,lng,r){
   const res=await fetch(`${SB}/rest/v1/rpc/nearby_partners`,{
     method:'POST',
@@ -553,17 +694,23 @@ async function fetchNearby(lat,lng,r){
   return res.json();
 }
 
-/* ── LOCALIZAÇÃO ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   LOCALIZAÇÃO
+══════════════════════════════════════════════════════════ */
 function handleLocate(){
   if(!navigator.geolocation){showToast('⚠️ GPS indisponível','Busque por bairro manualmente');return}
   setLoc('loading');
   navigator.geolocation.getCurrentPosition(
-    pos=>{userLat=pos.coords.latitude;userLng=pos.coords.longitude;localized=true;
-      setLoc('done');initMapAndLoad()},
+    pos=>{
+      userLat=pos.coords.latitude;userLng=pos.coords.longitude;localized=true;
+      setLoc('done');initMapAndLoad();
+      setSheetState('mid'); // abre sheet parcialmente após localizar
+    },
     ()=>{showToast('⚠️ GPS negado','Permita o acesso à localização');setLoc('idle')},
     {timeout:10000,enableHighAccuracy:true}
   );
 }
+
 function setLoc(s){
   const i=document.getElementById('locIco'),t=document.getElementById('locTxt');
   if(s==='loading'){i.innerHTML='<span class="spin"></span>';t.textContent='Localizando...'}
@@ -571,16 +718,16 @@ function setLoc(s){
   else{i.textContent='📍';t.textContent='Localizar'}
 }
 
-/* ── MAPA ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   MAPA
+══════════════════════════════════════════════════════════ */
 function initMapAndLoad(){
   if(!mapInst){
     document.getElementById('mapPh').style.display='none';
-    const el=document.getElementById('map');el.style.display='block';
     mapInst=L.map('map',{center:[userLat,userLng],zoom:15,zoomControl:true});
     mapInst.zoomControl.setPosition('bottomright');
     tileL=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      {attribution:'© <a href="https://openstreetmap.org">OSM</a> © <a href="https://carto.com">CARTO</a>',
-       maxZoom:19,subdomains:'abcd'}).addTo(mapInst);
+      {attribution:'© <a href="https://openstreetmap.org">OSM</a> © <a href="https://carto.com">CARTO</a>',maxZoom:19,subdomains:'abcd'}).addTo(mapInst);
   }
   placeUserPin();loadNearby();
 }
@@ -594,7 +741,12 @@ async function loadNearby(){
     mapInst.flyTo([userLat,userLng],z,{animate:true,duration:.8});
     const rl=radius>=1000?radius/1000+'km':radius+'m';
     showToast(`⚡ ${data.length} pontos encontrados`,`Dentro de ${rl} da sua localização`);
-  }catch(e){showToast('⚠️ Erro','Verifique sua conexão');document.getElementById('shCount').textContent='erro'}
+    document.getElementById('mapBadge').style.display='block';
+    document.getElementById('mapCnt').textContent=data.length;
+  }catch(e){
+    showToast('⚠️ Erro de conexão','Verifique sua internet');
+    document.getElementById('shCount').textContent='erro';
+  }
 }
 
 function refreshPins(list){
@@ -614,21 +766,18 @@ function refreshPins(list){
 }
 
 function placeUserPin(){
-  if(userM) mapInst.removeLayer(userM);
-  userM=L.marker([userLat,userLng],{icon:L.divIcon({className:'',
-    html:'<div class="u-pin"></div>',iconSize:[20,20],iconAnchor:[10,10]}),
-    zIndexOffset:1000}).addTo(mapInst).bindPopup('<b>📍 Você está aqui</b>');
+  if(userM)mapInst.removeLayer(userM);
+  userM=L.marker([userLat,userLng],{icon:L.divIcon({className:'',html:'<div class="u-pin"></div>',iconSize:[20,20],iconAnchor:[10,10]}),zIndexOffset:1000}).addTo(mapInst).bindPopup('<b>📍 Você está aqui</b>');
 }
 
 function drawRadius(){
-  if(radiusC) mapInst.removeLayer(radiusC);
-  radiusC=L.circle([userLat,userLng],{radius,color:'#00E5FF',weight:1.5,
-    opacity:.6,dashArray:'10,6',fillColor:'#00E5FF',fillOpacity:.04}).addTo(mapInst);
-  document.getElementById('mapBadge').style.display='block';
-  document.getElementById('mapCnt').textContent=partners.length;
+  if(radiusC)mapInst.removeLayer(radiusC);
+  radiusC=L.circle([userLat,userLng],{radius,color:'#00E5FF',weight:1.5,opacity:.6,dashArray:'10,6',fillColor:'#00E5FF',fillOpacity:.04}).addTo(mapInst);
 }
 
-/* ── RENDER PARCEIROS ────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   RENDER PARCEIROS
+══════════════════════════════════════════════════════════ */
 function renderPartners(list){
   document.getElementById('shCount').textContent=list.length+' encontrados';
   const el=document.getElementById('tp');
@@ -655,9 +804,11 @@ function renderPartners(list){
   }).join('');
 }
 
-/* ── DETAIL ──────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   DETAIL
+══════════════════════════════════════════════════════════ */
 function openDetail(id){
-  const p=partners.find(x=>x.id===id);if(!p) return;
+  const p=partners.find(x=>x.id===id);if(!p)return;
   curP=p;const s=SEG[p.segment]||SEG['A confirmar'];
   const d=p.distance_m<1000?p.distance_m+'m':(p.distance_m/1000).toFixed(1)+'km';
   document.getElementById('dEmoji').textContent=s.ico;
@@ -682,7 +833,7 @@ function openDetail(id){
 function closeDetail(){document.getElementById('overlay').classList.remove('open')}
 function openRoute(){routeTo(curP?.id)}
 function routeTo(id){
-  const p=partners.find(x=>x.id===id)||curP;if(!p) return;
+  const p=partners.find(x=>x.id===id)||curP;if(!p)return;
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}`,'_blank');
 }
 function openWpp(){
@@ -690,83 +841,49 @@ function openWpp(){
 }
 document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeDetail()});
 
-/* ── BUSCA LOCAL ─────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   BUSCA & RAIO
+══════════════════════════════════════════════════════════ */
 function onSearch(){
-  if(!localized) return;
+  if(!localized)return;
   const q=document.getElementById('sInput').value.toLowerCase().trim();
   const f=q?partners.filter(p=>p.trade_name.toLowerCase().includes(q)||(p.district||'').toLowerCase().includes(q)):partners;
   renderPartners(f);refreshPins(f);
 }
 
-/* ── RAIO ────────────────────────────────────────────── */
 function setRadius(el,r){
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');radius=r;
-  if(!localized) return;
+  if(!localized)return;
   loadNearby();
 }
 
-/* ── TABS ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   TABS
+══════════════════════════════════════════════════════════ */
+const TAB_DISPLAY={p:'flex',m:'block',s:'flex',a:'flex'};
 function setTab(el,t){
   document.querySelectorAll('.stab').forEach(x=>x.classList.remove('active'));
   el.classList.add('active');
   ['p','m','s','a'].forEach(id=>{
-    const el2=document.getElementById('t'+id);
-    if(el2) el2.style.display=id===t?(id==='p'?'flex':'block'):'none';
+    const e=document.getElementById('t'+id);
+    if(e)e.style.display=id===t?(TAB_DISPLAY[id]||'block'):'none';
   });
+  if(sheetState==='min')setSheetState('mid');
 }
-function toggleSheet(){document.getElementById('sheet').classList.toggle('exp')}
 
-/* ── SLIDER MANAUS — fotos reais via Wikimedia CDN ──── */
+/* ══════════════════════════════════════════════════════════
+   SLIDER MANAUS — fotos reais
+══════════════════════════════════════════════════════════ */
 const SLIDES=[
-  {
-    img:'fotos/teatro-amazonas.jpg',
-    tag:'Patrimônio',name:'Teatro Amazonas',
-    sub:'Opera house inaugurado em 1896 durante o ciclo da borracha. Palco de óperas, ballet e concertos.',
-    co:'#FF8A4D'
-  },
-  {
-    img:'fotos/encontro-das-aguas.jpg',
-    tag:'Natureza',name:'Encontro das Águas',
-    sub:'Rio Negro e Solimões correm lado a lado por 6km sem se misturar — fenômeno único no mundo.',
-    co:'#4DBBFF'
-  },
-  {
-    img:'fotos/praia-ponta-negra.jpg',
-    tag:'Lazer',name:'Praia de Ponta Negra',
-    sub:'Praia urbana às margens do Rio Negro. Temporada de novembro a março. Shows e gastronomia.',
-    co:'#80DFFF'
-  },
-  {
-    img:'fotos/mercado-adolpho-lisboa.jpg',
-    tag:'Gastronomia',name:'Mercado Adolpho Lisboa',
-    sub:'Construído em 1883 no estilo Art Nouveau. Peixes, especiarias amazônicas e artesanato regional.',
-    co:'#FFB04D'
-  },
-  {
-    img:'fotos/ponte-rio-negro.jpg',
-    tag:'Engenharia',name:'Ponte Rio Negro',
-    sub:'3,5km de extensão — a maior ponte pênsil do Brasil, ligando Manaus a Iranduba sobre o Rio Negro.',
-    co:'#4DB8FF'
-  },
-  {
-    img:'fotos/arena-amazonia.jpg',
-    tag:'Esporte',name:'Arena da Amazônia',
-    sub:'Estádio da Copa do Mundo 2014 com 44.000 lugares. Arquitetura inspirada no chapéu de palha indígena.',
-    co:'#CC80FF'
-  },
-  {
-    img:'fotos/floresta-amazonica.jpg',
-    tag:'Ecologia',name:'Floresta Amazônica',
-    sub:'A maior floresta tropical do mundo — 20% do oxigênio do planeta produzido aqui.',
-    co:'#4DFF88'
-  },
-  {
-    img:'fotos/parintins-boi-bumba.jpg',
-    tag:'Cultura',name:'Festival de Parintins',
-    sub:'O maior festival folclórico da Amazônia. 35.000 pessoas por dia. GeloCrim fornece 10t de gelo/dia.',
-    co:'#FF6B6B'
-  },
+  {img:'fotos/teatro-amazonas.jpg',      tag:'Patrimônio', name:'Teatro Amazonas',     sub:'Opera house inaugurado em 1896. Palco de óperas, ballet e concertos o ano todo.',co:'#FF8A4D'},
+  {img:'fotos/encontro-das-aguas.jpg',   tag:'Natureza',   name:'Encontro das Águas',  sub:'Rio Negro e Solimões correm lado a lado por 6km sem se misturar.',co:'#4DBBFF'},
+  {img:'fotos/praia-ponta-negra.jpg',    tag:'Lazer',      name:'Praia de Ponta Negra',sub:'Praia urbana às margens do Rio Negro. Temporada de novembro a março.',co:'#80DFFF'},
+  {img:'fotos/mercado-adolpho-lisboa.jpg',tag:'Gastronomia',name:'Mercado Adolpho Lisboa',sub:'Construído em 1883. Peixes, especiarias amazônicas e artesanato.',co:'#FFB04D'},
+  {img:'fotos/ponte-rio-negro.jpg',      tag:'Engenharia', name:'Ponte Rio Negro',     sub:'3,5km — a maior ponte pênsil do Brasil, ligando Manaus a Iranduba.',co:'#4DB8FF'},
+  {img:'fotos/arena-amazonia.jpg',       tag:'Esporte',    name:'Arena da Amazônia',   sub:'Estádio da Copa 2014 com 44.000 lugares. Arquitetura indígena amazônica.',co:'#CC80FF'},
+  {img:'fotos/floresta-amazonica.jpg',   tag:'Ecologia',   name:'Floresta Amazônica',  sub:'A maior floresta tropical do mundo — 20% do oxigênio do planeta.',co:'#4DFF88'},
+  {img:'fotos/parintins-boi-bumba.jpg',  tag:'Cultura',    name:'Festival de Parintins',sub:'O maior festival folclórico da Amazônia. 35.000 pessoas por dia.',co:'#FF6B6B'},
 ];
 
 function renderManaus(){
@@ -774,8 +891,7 @@ function renderManaus(){
   w.innerHTML=`<h3>MANAUS, AMAZONAS</h3>
     <div class="mtrack">${SLIDES.map(s=>`
       <div class="mcard">
-        <img class="mimg" src="${s.img}" alt="${s.name}" loading="lazy"
-          onerror="this.style.background='linear-gradient(135deg,var(--card),var(--card2))';this.style.height='140px';this.alt='';this.src=''"/>
+        <img class="mimg" src="${s.img}" alt="${s.name}" loading="lazy"/>
         <div class="mbody">
           <div class="mtag" style="color:${s.co}">${s.tag}</div>
           <div class="mname">${s.name}</div>
@@ -784,26 +900,18 @@ function renderManaus(){
       </div>`).join('')}</div>`;
 }
 
-/* ── VOCÊ SABIA — cards expansíveis com visual forte ── */
+/* ══════════════════════════════════════════════════════════
+   VOCÊ SABIA — curiosidades do Amazonas
+══════════════════════════════════════════════════════════ */
 const SABIAS=[
-  {ico:'🌡️',tag:'Clima',num:'34°C',title:'Mais quente e mais sedenta do Brasil',
-   txt:'Manaus tem temperatura média de 27°C e picos de 40°C o ano todo. O consumo de gelo per capita é o maior do país — sem sazonalidade, sem inverno.',
-   stat:'301 pontos de venda ativos',bg:'#FF5C00,#AA2200',co:'#FF8A4D'},
-  {ico:'🐟',tag:'Gastronomia',num:'200kg',title:'O pirarucu precisa de gelo',
-   txt:'O maior peixe de água doce do mundo depende integralmente da cadeia fria para chegar fresco ao mercado. GeloCrim abastece peixeiros de toda Manaus.',
-   stat:'69 postos de distribuição na rota',bg:'#004080,#0088CC',co:'#4DBBFF'},
-  {ico:'🎪',tag:'Cultura',num:'10t/dia',title:'Parintins consome 10 toneladas por dia',
-   txt:'35.000 visitantes por dia no Festival de Parintins — o maior folclórico da Amazônia. GeloCrim é fornecedora oficial de gelo durante os 3 dias do evento.',
-   stat:'Fornecimento oficial garantido',bg:'#6200EA,#AA00FF',co:'#CC80FF'},
-  {ico:'🏭',tag:'Indústria',num:'500+',title:'Zona Franca depende de refrigeração',
-   txt:'Mais de 500 empresas no Polo Industrial usam gelo em processos industriais, cantinas e câmaras frias — todas na rede de distribuição GeloCrim.',
-   stat:'15 distribuidoras cadastradas',bg:'#1B5E20,#2E7D32',co:'#4DFF88'},
-  {ico:'💧',tag:'Qualidade',num:'100%',title:'Gelo GeloCrim é 100% potável',
-   txt:'Produzido com água tratada, filtrada e certificada. Pode usar diretamente em bebidas, frutos do mar e alimentos — sem preocupação.',
-   stat:'Certificação ANVISA',bg:'#01579B,#0288D1',co:'#80D0FF'},
-  {ico:'🚚',tag:'Logística',num:'114t',title:'114 toneladas de gelo por semana',
-   txt:'6 rotas cobrindo toda Manaus e o interior do Amazonas — Itapiranga, Careiro, Presidente Figueiredo e mais. A operação mais completa da região.',
-   stat:'301 pontos · 6 rotas ativas',bg:'#212121,#424242',co:'#AAAAAA'},
+  {ico:'🌿',tag:'Natureza',num:'20%',title:'A Amazônia produz 20% do oxigênio do planeta',txt:'A floresta amazônica é o maior bioma tropical do mundo e é responsável pela produção de 20% de todo o oxigênio que respiramos. Por isso é chamada de "pulmão do mundo".',stat:'5,5 milhões de km² de floresta',bg:'#1B5E20,#2E7D32',co:'#4DFF88'},
+  {ico:'💧',tag:'Água',num:'20%',title:'O Rio Amazonas carrega 20% de toda a água doce do mundo',txt:'O Rio Amazonas despeja no Atlântico cerca de 20% de toda a água doce que vai aos oceanos do planeta. Sua vazão é maior que a dos 7 maiores rios do mundo juntos.',stat:'300.000 m³ de água por segundo',bg:'#01579B,#0288D1',co:'#80D0FF'},
+  {ico:'🏙',tag:'Manaus',num:'2M+',title:'Única metrópole no meio da floresta',txt:'Manaus tem mais de 2 milhões de habitantes e é a única metrópole do mundo completamente rodeada por floresta primária. Só se chega de avião ou barco — não há estrada ligando ao Brasil.',stat:'700km da rodovia mais próxima',bg:'#0D47A1,#1565C0',co:'#82B1FF'},
+  {ico:'🌊',tag:'Fenômeno',num:'4m',title:'A Pororoca — onda que entra 800km dentro do rio',txt:'A Pororoca é uma maré que forma ondas de até 4 metros que avançam pelo Rio Amazonas adentro por até 800km. Ocorre principalmente em março, quando a lua cheia empurra o oceano.',stat:'Onda viaja a 30km/h por horas',bg:'#006064,#00838F',co:'#4DFFD0'},
+  {ico:'🐟',tag:'Biodiversidade',num:'3.000+',title:'Mais espécies de peixe que todo o Atlântico',txt:'O Amazonas abriga mais de 3.000 espécies de peixes de água doce — mais do que todo o Oceano Atlântico. O pirarucu, com até 3m e 200kg, é o maior peixe de água doce do mundo.',stat:'Novo peixe descoberto a cada 2 dias',bg:'#004D40,#00695C',co:'#64FFDA'},
+  {ico:'🏭',tag:'Economia',num:'8%',title:'Polo Industrial de Manaus gera 8% do PIB industrial do Brasil',txt:'A Zona Franca de Manaus abriga mais de 500 empresas e é responsável por 8% do PIB industrial brasileiro. Foi criada em 1967 para desenvolver a região sem destruir a floresta.',stat:'500+ empresas · 100.000 empregos diretos',bg:'#1A237E,#283593',co:'#82B1FF'},
+  {ico:'🌍',tag:'Curiosidade',num:'0°',title:'A areia do Saara fertiliza a Amazônia',txt:'Cerca de 22 milhões de toneladas de areia do deserto do Saara (África) cruzam o Atlântico pelos ventos todo ano e fertilizam o solo amazônico com minerais essenciais. A floresta depende desta poeira.',stat:'22 milhões de toneladas/ano',bg:'#E65100,#BF360C',co:'#FFAB40'},
+  {ico:'🌺',tag:'Símbolo',num:'33cm',title:'A Vitória Régia aguenta até 40kg sobre suas folhas',txt:'A Vitória Régia, flor símbolo do Amazonas, tem folhas que podem chegar a 33cm de diâmetro e suportar até 40kg em cima sem afundar. Floresce à noite e muda de cor ao longo de 48h.',stat:'Símbolo oficial do Amazonas',bg:'#880E4F,#AD1457',co:'#FF80AB'},
 ];
 
 function renderSabias(){
@@ -811,7 +919,7 @@ function renderSabias(){
     <div class="scard">
       <div class="shero">
         <div class="shero-bg" style="background:linear-gradient(135deg,${s.bg})"></div>
-        <div class="shero-content">
+        <div class="shero-c">
           <div class="shero-ico">${s.ico}</div>
           <div class="shero-text">
             <div class="shero-tag">${s.tag}</div>
@@ -827,32 +935,18 @@ function renderSabias(){
     </div>`).join('');
 }
 
-/* ── AGENDA — eventos reais de Manaus 2025/2026 ──────── */
+/* ══════════════════════════════════════════════════════════
+   AGENDA — eventos reais de Manaus
+══════════════════════════════════════════════════════════ */
 const AGENDA=[
-  {dia:'22',mes:'AGO',nome:'Festival do Beiradão',
-   local:'Largo São Sebastião · Centro Histórico',
-   desc:'Água Cristalina, Nunes Filho e Márcia Novo. Valorização da cultura beiradeira do Amazonas.',
-   gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'17',mes:'SET',nome:'Festival de Cinema – Olhar do Norte',
-   local:'Teatro Amazonas e espaços do Centro · Manaus',
-   desc:'7ª edição com mostras competitivas Amazônia, Outros Nortes e Olhinho (infantojuvenil).',
-   gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'25',mes:'SET',nome:'Festival Lona Aberta – Circo & Artes',
-   local:'Espaços culturais de Manaus',
-   desc:'3ª edição com grupos do AM, PA, GO, SP, RJ e CE. Intercâmbio de artistas circenses.',
-   gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'23',mes:'OUT',nome:'Agrifest Rodeio Show 2025',
-   local:'Parque Multiuso Eurípedes Ferreira Lins · BR-174',
-   desc:'Rodeio, exposição de animais e shows nacionais. GeloCrim abastece toda a área de alimentação.',
-   gelo:true,free:false,link:'https://edilenemafra.com'},
-  {dia:'02',mes:'NOV',nome:'Festival Folclórico de Manaus',
-   local:'Sambódromo · Centro',
-   desc:'Grupos folclóricos do Amazonas. GeloCrim presente com fornecimento oficial de gelo.',
-   gelo:true,free:true,link:'https://cultura.am.gov.br/agenda/'},
-  {dia:'06',mes:'JAN',nome:'Festival de Parintins 2026',
-   local:'Bumbódromo · Parintins, AM',
-   desc:'O maior festival folclórico da Amazônia. 35.000 pessoas/dia. GeloCrim: +10t de gelo/dia.',
-   gelo:true,free:false,link:'https://www.agendaculturaldemanaus.com.br'},
+  {dia:'16',mes:'AGO',nome:'ExpoAgro 2026 — 48ª Edição',local:'Parque Multiuso · BR-174 km 2',desc:'Rodeio, shows (Klessinha, Humberto & Ronaldo, Tarcísio do Acordeon), exposição de animais e 230mil visitantes esperados.',gelo:true,free:true,link:'https://edilenemafra.com'},
+  {dia:'17',mes:'SET',nome:'Festival de Cinema — Olhar do Norte',local:'Teatro Amazonas · Centro',desc:'7ª edição com mostras competitivas Amazônia, Outros Nortes e Olhinho infantojuvenil.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
+  {dia:'25',mes:'SET',nome:'Festival Lona Aberta — Circo & Artes',local:'Espaços culturais · Manaus',desc:'3ª edição com grupos do AM, PA, GO, SP, RJ e CE. Intercâmbio de artistas circenses.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
+  {dia:'09',mes:'OUT',nome:'Samba Manaus 2026 — Última Edição',local:'Arena da Amazônia · Centro',desc:'25 horas de festa com grandes nomes do samba e pagode nacional.',gelo:false,free:false,link:'https://edilenemafra.com'},
+  {dia:'02',mes:'NOV',nome:'Festival Folclórico de Manaus',local:'Sambódromo · Av. Pedro Teixeira',desc:'Grupos folclóricos do Amazonas em apresentações abertas ao público. GeloCrim presente.',gelo:true,free:true,link:'https://cultura.am.gov.br/agenda/'},
+  {dia:'23',mes:'NOV',nome:'13º Festival Amazonas de Dança',local:'Teatro Amazonas · Centro',desc:'Maior festival de dança da Amazônia com grupos do Brasil e exterior.',gelo:false,free:true,link:'https://cultura.am.gov.br/agenda/'},
+  {dia:'31',mes:'DEZ',nome:'Réveillon Ponta Negra 2027',local:'Praia de Ponta Negra · Manaus',desc:'Fogos de 12min sobre o Rio Negro, shows musicais até o amanhecer. Entrada gratuita.',gelo:false,free:true,link:'https://manausagil.com/eventos/'},
+  {dia:'25',mes:'JUN',nome:'Festival de Parintins 2027',local:'Bumbódromo · Parintins, AM',desc:'O maior festival folclórico da Amazônia. Boi Garantido × Boi Caprichoso. GeloCrim fornece 10t/dia.',gelo:true,free:false,link:'https://agendaculturaldemanaus.com.br'},
 ];
 
 function renderAgenda(){
@@ -872,9 +966,11 @@ function renderAgenda(){
     </div>`).join('');
 }
 
-/* ── RELÓGIO — analógico + digital, fuso Manaus UTC-4 ── */
-const DIAS  = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+/* ══════════════════════════════════════════════════════════
+   RELÓGIO — Praça da Matriz de Manaus
+══════════════════════════════════════════════════════════ */
+const DIAS=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 function getManausTime(){
   return new Date(new Date().toLocaleString('en-US',{timeZone:'America/Manaus'}));
@@ -882,23 +978,15 @@ function getManausTime(){
 
 function drawClock(){
   const canvas=document.getElementById('clockCanvas');
-  if(!canvas) return;
+  if(!canvas)return;
   const ctx=canvas.getContext('2d');
   const t=getManausTime();
   const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,r=W/2-2;
   ctx.clearRect(0,0,W,H);
-
-  // Moldura dourada
   const g=ctx.createRadialGradient(cx,cy,r-3,cx,cy,r+1);
-  g.addColorStop(0,'#B8860B');g.addColorStop(0.4,'#F0C020');
-  g.addColorStop(0.7,'#9A7010');g.addColorStop(1,'#F0C020');
+  g.addColorStop(0,'#B8860B');g.addColorStop(.4,'#F0C020');g.addColorStop(.7,'#9A7010');g.addColorStop(1,'#F0C020');
   ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);ctx.fillStyle=g;ctx.fill();
-
-  // Face creme
-  ctx.beginPath();ctx.arc(cx,cy,r-3,0,2*Math.PI);
-  ctx.fillStyle=isDark?'#F5F0E0':'#FAFAF5';ctx.fill();
-
-  // Marcações
+  ctx.beginPath();ctx.arc(cx,cy,r-3,0,2*Math.PI);ctx.fillStyle=isDark?'#F5F0E0':'#FAFAF5';ctx.fill();
   for(let i=0;i<12;i++){
     const a=(i/12)*2*Math.PI-Math.PI/2,isM=i%3===0;
     ctx.beginPath();
@@ -906,45 +994,30 @@ function drawClock(){
     ctx.lineTo(cx+Math.cos(a)*(r-(isM?4:5)),cy+Math.sin(a)*(r-(isM?4:5)));
     ctx.strokeStyle='#141820';ctx.lineWidth=isM?2:1;ctx.lineCap='round';ctx.stroke();
   }
-
-  // Ponteiro horas
   const h=t.getHours()%12,m=t.getMinutes(),s=t.getSeconds();
   const hA=((h+m/60)/12)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();ctx.moveTo(cx,cy);
-  ctx.lineTo(cx+Math.cos(hA)*(r*0.52),cy+Math.sin(hA)*(r*0.52));
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(hA)*(r*.52),cy+Math.sin(hA)*(r*.52));
   ctx.strokeStyle='#141820';ctx.lineWidth=3.5;ctx.lineCap='round';ctx.stroke();
-
-  // Ponteiro minutos
   const mA=(m/60)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();ctx.moveTo(cx,cy);
-  ctx.lineTo(cx+Math.cos(mA)*(r*0.75),cy+Math.sin(mA)*(r*0.75));
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(mA)*(r*.75),cy+Math.sin(mA)*(r*.75));
   ctx.strokeStyle='#141820';ctx.lineWidth=2;ctx.lineCap='round';ctx.stroke();
-
-  // Ponteiro segundos (vermelho)
   const sA=(s/60)*2*Math.PI-Math.PI/2;
-  ctx.beginPath();
-  ctx.moveTo(cx-Math.cos(sA)*4,cy-Math.sin(sA)*4);
-  ctx.lineTo(cx+Math.cos(sA)*(r*0.86),cy+Math.sin(sA)*(r*0.86));
+  ctx.beginPath();ctx.moveTo(cx-Math.cos(sA)*4,cy-Math.sin(sA)*4);
+  ctx.lineTo(cx+Math.cos(sA)*(r*.86),cy+Math.sin(sA)*(r*.86));
   ctx.strokeStyle='#CC1A10';ctx.lineWidth=1.2;ctx.lineCap='round';ctx.stroke();
-
-  // Centro
   ctx.beginPath();ctx.arc(cx,cy,3,0,2*Math.PI);ctx.fillStyle='#141820';ctx.fill();
   ctx.beginPath();ctx.arc(cx,cy,1.5,0,2*Math.PI);ctx.fillStyle='#CC1A10';ctx.fill();
-
-  // Digital
-  const hh=String(h===0?12:h).padStart(2,'0');
-  const mm=String(m).padStart(2,'0');
-  const ss=String(s).padStart(2,'0');
+  const hh=String(h===0?12:h).padStart(2,'0'),mm=String(m).padStart(2,'0'),ss=String(s).padStart(2,'0');
   document.getElementById('clockHM').textContent=`${hh}:${mm}`;
   document.getElementById('clockS').textContent=ss;
-  document.getElementById('clockDate').textContent=
-    `${DIAS[t.getDay()]}, ${t.getDate()} de ${MESES[t.getMonth()]} de ${t.getFullYear()}`;
+  document.getElementById('clockDate').textContent=`${DIAS[t.getDay()]}, ${t.getDate()} de ${MESES[t.getMonth()]} de ${t.getFullYear()}`;
 }
-
 drawClock();
 setInterval(drawClock,1000);
 
-/* ── TEMA ────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   TEMA
+══════════════════════════════════════════════════════════ */
 function toggleTheme(){
   isDark=!isDark;
   document.documentElement.setAttribute('data-theme',isDark?'':'light');
@@ -957,7 +1030,9 @@ function toggleTheme(){
   }
 }
 
-/* ── CLIMA ───────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   CLIMA
+══════════════════════════════════════════════════════════ */
 const WC={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',55:'🌧',61:'🌧',65:'⛈',80:'🌦',82:'⛈',95:'⛈'};
 async function loadWeather(){
   try{
@@ -968,7 +1043,9 @@ async function loadWeather(){
   }catch{}
 }
 
-/* ── TOAST ───────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════ */
 let _tt;
 function showToast(t,s){
   document.getElementById('tT').textContent=t;
@@ -979,26 +1056,37 @@ function showToast(t,s){
 }
 function closeToast(){document.getElementById('toast').classList.remove('show')}
 
-/* ── SPLASH + INIT ───────────────────────────────────── */
-function runSplash(cb){
-  let w=0;const b=document.getElementById('spFill');
-  const iv=setInterval(()=>{w=Math.min(w+Math.random()*16,92);b.style.width=w+'%'},100);
-  setTimeout(()=>{clearInterval(iv);b.style.width='100%';
-    setTimeout(()=>{document.getElementById('splash').classList.add('out');
-      setTimeout(()=>{try{document.getElementById('splash').remove()}catch{}},600);
-      cb();},300);
-  },2000);
-}
-
+/* ══════════════════════════════════════════════════════════
+   LEAFLET
+══════════════════════════════════════════════════════════ */
 function loadLeaflet(cb){
   const s=document.createElement('script');
   s.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
   s.async=true;s.onload=cb;document.head.appendChild(s);
 }
 
+/* ══════════════════════════════════════════════════════════
+   SPLASH + INIT
+══════════════════════════════════════════════════════════ */
+function runSplash(cb){
+  let w=0;const b=document.getElementById('spFill');
+  const iv=setInterval(()=>{w=Math.min(w+Math.random()*16,92);b.style.width=w+'%'},100);
+  setTimeout(()=>{clearInterval(iv);b.style.width='100%';
+    setTimeout(()=>{
+      document.getElementById('splash').classList.add('out');
+      setTimeout(()=>{try{document.getElementById('splash').remove()}catch{}},600);
+      cb();
+    },300);
+  },2000);
+}
+
 runSplash(()=>{
-  renderManaus();renderSabias();renderAgenda();loadWeather();
-  loadLeaflet(()=>{/* pronto para localizar */});
+  updateHeaderOffset();
+  renderManaus();
+  renderSabias();
+  renderAgenda();
+  loadWeather();
+  loadLeaflet(()=>{/* aguarda localizar */});
 });
 </script>
 </body>

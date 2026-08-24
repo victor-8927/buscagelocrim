@@ -271,15 +271,10 @@ body{font-family:var(--fb);color:var(--txt1);-webkit-font-smoothing:antialiased}
 .stab.active{color:var(--amber);border-bottom-color:var(--amber)}
 
 /* conteúdo das abas */
-.plist{
-  flex:1;overflow-y:auto;padding:8px 12px 24px;
-  display:flex;flex-direction:column;gap:7px;min-height:0;
-}
-.plist::-webkit-scrollbar{width:3px}
-.plist::-webkit-scrollbar-thumb{background:var(--card2);border-radius:2px}
-.mwrap{flex:1;overflow-y:auto;padding:10px 12px 24px;min-height:0}
-.swrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;display:flex;flex-direction:column;gap:10px}
-.awrap{flex:1;overflow-y:auto;padding:8px 12px 24px;min-height:0;display:flex;flex-direction:column;gap:8px}
+.awrap{flex:1;overflow-y:auto;padding:8px 12px 80px;min-height:0;display:flex;flex-direction:column;gap:8px}
+.swrap{flex:1;overflow-y:auto;padding:8px 12px 80px;min-height:0;display:flex;flex-direction:column;gap:10px}
+.plist{flex:1;overflow-y:auto;padding:8px 12px 80px;display:flex;flex-direction:column;gap:7px;min-height:0}
+.mwrap{flex:1;overflow-y:auto;padding:10px 12px 80px;min-height:0}
 
 /* ══════════════════════════════════════════════════════════
    GPS CTA
@@ -944,10 +939,8 @@ function setTab(el,t){
     const e=document.getElementById('t'+id);
     if(e)e.style.display=id===t?(TAB_DISPLAY[id]||'block'):'none';
   });
-  // Abre em mid — nunca em open automaticamente
+  // Só abre se estava minimizado — nunca força open
   if(sheetState==='min') setSheetState('mid');
-  // Se já estava open, mantém mid para dar espaço ao mapa
-  if(sheetState==='open') setSheetState('mid');
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1048,7 +1041,7 @@ async function renderAgenda(){
           Authorization:`Bearer ${SK}`,
           'Content-Type':'application/json'
         },
-        body:JSON.stringify({days_ahead:90})
+        body:JSON.stringify({days_ahead:365})
       }
     );
 
